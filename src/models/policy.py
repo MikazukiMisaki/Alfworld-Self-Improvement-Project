@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Protocol
 
-from alfworld_research.env.base import Task
+from env.base import Task
 
 
 @dataclass(frozen=True)

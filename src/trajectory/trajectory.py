@@ -7,8 +7,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from alfworld_research.env.base import Task
-from alfworld_research.models.policy import TokenStatistics
+from env.base import Task
+from models.policy import TokenStatistics
 
 
 def utc_timestamp() -> str:

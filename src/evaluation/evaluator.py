@@ -5,10 +5,10 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from alfworld_research.env.base import InteractiveEnvironment
-from alfworld_research.models.policy import ActionPolicy
-from alfworld_research.trajectory.collector import collect_episode
-from alfworld_research.trajectory.trajectory import Trajectory
+from env.base import InteractiveEnvironment
+from models.policy import ActionPolicy
+from trajectory.collector import collect_episode
+from trajectory.trajectory import Trajectory
 
 from .metrics import EvaluationMetrics
 

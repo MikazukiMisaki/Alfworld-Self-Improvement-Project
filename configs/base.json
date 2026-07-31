@@ -1,6 +1,0 @@
-{
-  "seed": 42,
-  "environment": {"max_steps": 50},
-  "evaluation": {"episodes": 100},
-  "logging": {"trajectory_format": "jsonl"}
-}

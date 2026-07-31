@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from alfworld_research.models.action_parser import parse_action
+from models.action_parser import parse_action
 
 
 class ActionParserTests(unittest.TestCase):

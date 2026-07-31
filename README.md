@@ -1,36 +1,41 @@
-# ALFWorld Self-Improvement Research Framework
+# Alfworld-Self-Improvement
 
-A small, modular Python foundation for experiments on self-improving language
-models in interactive environments. The core package deliberately has no runtime
-dependencies: integrate ALFWorld, model serving, and training libraries behind
-the provided interfaces.
+Minimal reproducible baseline infrastructure for the thesis project
+“Recovery-Aware Intervention Selection for Small Language Agents.”
 
-## Quick start
+## Sprint 1 scope
 
-```bash
-python3 -m pip install -e '.[dev]'
-python3 -m pytest
-python3 -m alfworld_research.experiments.run_demo
-```
+ALFWorld → Qwen3-8B → trajectory collection → evaluation → JSONL export.
 
-## Layout
+Out of scope: selector, reflection, memory, intervention, DPO, PPO, and GRPO.
 
-- `src/alfworld_research/env`: environment protocols and adapters.
-- `src/alfworld_research/trajectory`: typed trajectories and JSONL persistence.
-- `src/alfworld_research/reflection`: interchangeable reflection generators.
-- `src/alfworld_research/preference`: DPO-ready preference construction.
-- `src/alfworld_research/trainer`: trainer interfaces.
-- `src/alfworld_research/evaluation`: reusable evaluation loop and metrics.
-- `configs`: versioned experiment configuration examples.
+## Repository layout
 
-The demo uses a deterministic toy environment. Replace it with an ALFWorld
-adapter and a model policy without changing the collector or evaluator APIs.
+    docs/        sprint, paper, TODO, and changelog documents
+    src/env/     environment contracts and ALFWorld adapter
+    src/models/  Qwen wrapper and action parser
+    src/trajectory/ canonical trajectory records, collector, and JSONL store
+    src/evaluation/ metrics and evaluation runner
+    src/utils/   small shared utilities
+    tests/       unit tests without external model/environment dependencies
+    configs/     baseline configuration
+    scripts/     runnable collection entry points
+    legacy/      reserved immutable legacy artifacts
 
-## Baseline collection
+## Run a baseline
 
-Set ALFWORLD_CONFIG_PATH and ALFWORLD_DATA, then run:
+Install the ALFWorld, PyTorch, Transformers, and PyYAML runtimes. Then set:
 
-    PYTHONPATH=src python3 scripts/collect_baseline.py --config configs/collection/baseline.yaml
+    export ALFWORLD_CONFIG_PATH=/absolute/path/to/base_config.yaml
+    export ALFWORLD_DATA=/absolute/path/to/alfworld_data
+    python scripts/collect_baseline.py
 
-The script writes a unique results directory containing a manifest, JSONL
-trajectories, and aggregate metrics.
+The script creates a unique results/baseline directory containing:
+
+- trajectory.jsonl
+- metrics.json
+- run_manifest.json
+
+## Tests
+
+    PYTHONPATH=src python -m unittest discover -s tests -v

@@ -7,16 +7,22 @@ import argparse
 import json
 import os
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from alfworld_research.env.alfworld import AlfWorldConfig, AlfWorldTextEnvironment
-from alfworld_research.evaluation.evaluator import evaluate
-from alfworld_research.models.policy import GenerationOptions
-from alfworld_research.models.qwen import QwenPolicy, QwenPolicyConfig
-from alfworld_research.trajectory.replay_buffer import JsonlTrajectoryStore
-from alfworld_research.trajectory.trajectory import RunManifest
+# Allow direct script execution from the repository root without an editable
+# package installation.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+from env.alfworld import AlfWorldConfig, AlfWorldTextEnvironment
+from evaluation.evaluator import evaluate
+from models.policy import GenerationOptions
+from models.qwen import QwenPolicy, QwenPolicyConfig
+from trajectory.store import JsonlTrajectoryStore
+from trajectory.trajectory import RunManifest
 
 
 def main() -> None:
@@ -58,7 +64,7 @@ def main() -> None:
         seeds=seeds,
         max_steps=int(collection_config["max_steps"]),
     )
-    store = JsonlTrajectoryStore(run_directory / "trajectories.jsonl")
+    store = JsonlTrajectoryStore(run_directory / "trajectory.jsonl")
     for trajectory in report.trajectories:
         store.append(trajectory)
     _write_json(run_directory / "metrics.json", report.metrics.__dict__)

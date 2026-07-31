@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Sequence
 
-from alfworld_research.trajectory.trajectory import Trajectory
+from trajectory.trajectory import Trajectory
 
 
 @dataclass(frozen=True)

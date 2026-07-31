@@ -3,10 +3,10 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
-from alfworld_research.env.base import ResetResult, Task, Transition
-from alfworld_research.evaluation.metrics import EvaluationMetrics
-from alfworld_research.models.policy import ActionDecision, ActionRequest, TokenStatistics
-from alfworld_research.trajectory.collector import collect_episode
+from env.base import ResetResult, Task, Transition
+from evaluation.metrics import EvaluationMetrics
+from models.policy import ActionDecision, ActionRequest, TokenStatistics
+from trajectory.collector import collect_episode
 
 
 class Environment:

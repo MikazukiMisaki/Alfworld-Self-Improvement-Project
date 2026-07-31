@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from alfworld_research.env.base import InteractiveEnvironment
-from alfworld_research.models.policy import ActionPolicy, ActionRequest
+from env.base import InteractiveEnvironment
+from models.policy import ActionPolicy, ActionRequest
 
 from .trajectory import Step, Trajectory, trajectory_id, utc_timestamp
 
