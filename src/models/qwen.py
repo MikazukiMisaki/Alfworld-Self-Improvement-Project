@@ -17,6 +17,7 @@ class QwenPolicyConfig:
     device: str = "auto"
     dtype: str = "bfloat16"
     trust_remote_code: bool = False
+    enable_thinking: bool = False
     generation: GenerationOptions = GenerationOptions()
 
 
@@ -39,7 +40,12 @@ class QwenPolicy(ActionPolicy):
         prompt = self._prompt(request)
         messages = [{"role": "user", "content": prompt}]
         if hasattr(tokenizer, "apply_chat_template"):
-            rendered = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            rendered = tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+                enable_thinking=self._config.enable_thinking,
+            )
         else:
             rendered = prompt
         inputs = tokenizer(rendered, return_tensors="pt")
@@ -93,7 +99,7 @@ class QwenPolicy(ActionPolicy):
         if self._tokenizer.pad_token is None:
             self._tokenizer.pad_token = self._tokenizer.eos_token
         model_kwargs: dict[str, Any] = {
-            "torch_dtype": dtype,
+            "dtype": dtype,
             "trust_remote_code": self._config.trust_remote_code,
         }
         if self._config.device == "auto":
@@ -113,8 +119,10 @@ class QwenPolicy(ActionPolicy):
         )
         history = "\n".join(f"Observation: {observation}\nAction: {action}" for observation, action in request.history)
         return (
-            "You are an ALFWorld household agent. Choose exactly one next action. "
-            "Do not explain your answer.\n\n"
+            "You are an ALFWorld household agent. Select exactly one next action.\n"
+            "Return exactly one line in this format: Action: <command>.\n"
+            "Copy <command> exactly from the valid-actions list. Do not explain, reason, "
+            "or emit <think> tags.\n\n"
             f"Task: {request.task.text}\n"
             f"History:\n{history or '(none)'}\n\n"
             f"Current observation:\n{request.observation}\n\n"
@@ -129,6 +137,7 @@ class QwenPolicy(ActionPolicy):
             "do_sample": options.do_sample,
             "temperature": options.temperature,
             "top_p": options.top_p,
+            "enable_thinking": self._config.enable_thinking,
         }
 
     @staticmethod

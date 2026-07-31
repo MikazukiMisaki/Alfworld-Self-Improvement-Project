@@ -95,7 +95,7 @@ class AlfWorldTextEnvironment:
         if self._config.data_path is not None:
             os.environ["ALFWORLD_DATA"] = str(self._config.data_path)
         with self._config.config_path.open("r", encoding="utf-8") as handle:
-            configuration = yaml.safe_load(handle)
+            configuration = _expand_environment(yaml.safe_load(handle))
         self._environment = AlfredTWEnv(configuration, train_eval=self._alfworld_split())
         self._environment = self._environment.init_env(batch_size=self._config.batch_size)
         return self._environment
@@ -135,15 +135,35 @@ class AlfWorldTextEnvironment:
     def _task_from(self, observation: str, info: dict[str, Any]) -> Task:
         match = _TASK_PATTERN.search(observation)
         task_text = match.group(1).strip().rstrip(".") if match else observation.strip()
-        extra = info.get("extra_game_info", {})
-        game_file = extra.get("game_file") if isinstance(extra, dict) else None
-        task_id = Path(str(game_file)).stem if game_file else f"{self._config.split}:{task_text}"
+        game_file = self._game_file_from_info(info)
+        task_id = self._task_id_from_game_file(game_file) if game_file else f"{self._config.split}:{task_text}"
         return Task(
             task_id=task_id,
             text=task_text,
             split=self._config.split,
             metadata={"game_file": game_file} if game_file else {},
         )
+
+    @classmethod
+    def _game_file_from_info(cls, info: dict[str, Any]) -> str | None:
+        """Extract ALFWorld's game path across released info-dict variants."""
+        direct = info.get("extra.gamefile")
+        if direct is not None:
+            value = cls._first(direct)
+            return str(value) if value else None
+        extra = info.get("extra_game_info", {})
+        if isinstance(extra, dict):
+            value = extra.get("game_file")
+            return str(value) if value else None
+        return None
+
+    @staticmethod
+    def _task_id_from_game_file(game_file: str) -> str:
+        """Build a readable, unique ALFWorld task ID from its game path."""
+        path = Path(game_file)
+        if path.stem != "game":
+            return path.stem
+        return "/".join(path.parts[-3:-1])
 
     @staticmethod
     def _seed(seed: int | None) -> None:
@@ -164,3 +184,14 @@ class AlfWorldTextEnvironment:
                 torch.cuda.manual_seed_all(seed)
         except ImportError:
             pass
+
+
+def _expand_environment(value: Any) -> Any:
+    """Resolve environment variables embedded in an ALFWorld YAML config."""
+    if isinstance(value, str):
+        return os.path.expandvars(value)
+    if isinstance(value, list):
+        return [_expand_environment(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _expand_environment(item) for key, item in value.items()}
+    return value

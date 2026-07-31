@@ -135,6 +135,7 @@ def _policy(config: dict[str, Any]) -> QwenPolicy:
             device=str(config.get("device", "auto")),
             dtype=str(config.get("dtype", "bfloat16")),
             trust_remote_code=bool(config.get("trust_remote_code", False)),
+            enable_thinking=bool(config.get("enable_thinking", False)),
             generation=generation,
         )
     )

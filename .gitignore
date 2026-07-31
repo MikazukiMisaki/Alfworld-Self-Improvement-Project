@@ -6,5 +6,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 
+# Operating-system metadata
+.DS_Store
+
 # Local model and Hugging Face caches
 .hf_cache/

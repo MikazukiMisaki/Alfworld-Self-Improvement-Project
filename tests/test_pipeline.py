@@ -4,6 +4,7 @@ import unittest
 from typing import Any
 
 from env.base import ResetResult, Task, Transition
+from evaluation.evaluator import evaluate
 from evaluation.metrics import EvaluationMetrics
 from models.policy import ActionDecision, ActionRequest, TokenStatistics
 from trajectory.collector import collect_episode
@@ -72,3 +73,15 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(metrics.mean_episode_length, 1.0)
         self.assertEqual(metrics.invalid_action_rate, 0.0)
         self.assertEqual(metrics.mean_generated_tokens, 1.0)
+
+    def test_evaluation_reuses_one_environment(self) -> None:
+        instances: list[Environment] = []
+
+        def factory() -> Environment:
+            instance = Environment()
+            instances.append(instance)
+            return instance
+
+        report = evaluate(factory, Policy("good"), seeds=(1, 2), max_steps=1)
+        self.assertEqual(len(report.trajectories), 2)
+        self.assertEqual(len(instances), 1)

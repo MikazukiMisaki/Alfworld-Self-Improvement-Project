@@ -57,3 +57,12 @@ class StoreAndEnvironmentTests(unittest.TestCase):
         unseen = AlfWorldTextEnvironment(AlfWorldConfig(Path("unused.yaml"), split="valid_unseen"))
         self.assertEqual(seen._alfworld_split(), "eval_in_distribution")
         self.assertEqual(unseen._alfworld_split(), "eval_out_of_distribution")
+
+    def test_alfworld_adapter_uses_gamefile_path_as_task_id(self) -> None:
+        environment = AlfWorldTextEnvironment(AlfWorldConfig(Path("unused.yaml"), split="valid_seen"))
+        task = environment._task_from(
+            "Your task is to: look.",
+            {"extra.gamefile": ["/data/valid_seen/look_at_obj-Book-None-Desk-1/trial_001/game.tw-pddl"]},
+        )
+        self.assertEqual(task.task_id, "look_at_obj-Book-None-Desk-1/trial_001")
+        self.assertEqual(task.metadata["game_file"], "/data/valid_seen/look_at_obj-Book-None-Desk-1/trial_001/game.tw-pddl")

@@ -31,8 +31,10 @@ def evaluate(
     """Evaluate a policy in fresh environments for the supplied seed schedule."""
     if not seeds:
         raise ValueError("at least one seed is required")
+    # ALFWorld loads all game files during construction. Reuse its initialized
+    # environment across the seed schedule, as in the proven legacy runner.
+    environment = environment_factory()
     trajectories = tuple(
-        collect_episode(environment_factory(), policy, max_steps=max_steps, seed=seed)
-        for seed in seeds
+        collect_episode(environment, policy, max_steps=max_steps, seed=seed) for seed in seeds
     )
     return EvaluationReport(trajectories, EvaluationMetrics.from_trajectories(trajectories))
