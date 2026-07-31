@@ -50,6 +50,20 @@ class Policy:
         )
 
 
+class MalformedPolicy:
+    model_version = "malformed-policy"
+
+    def act(self, request: ActionRequest) -> ActionDecision:
+        return ActionDecision(
+            action="",
+            raw_output="<think>go to good</think>",
+            parser_status="not_admissible",
+            model_version=self.model_version,
+            token_statistics=TokenStatistics(4, -0.1, 0.2),
+            metadata={"parser": {"candidate": "<think>go to good</think>", "invalid_reason": "not in valid actions"}},
+        )
+
+
 class PipelineTests(unittest.TestCase):
     def test_collection_preserves_baseline_provenance(self) -> None:
         trajectory = collect_episode(Environment(), Policy("good"), max_steps=3, seed=7)
@@ -85,3 +99,14 @@ class PipelineTests(unittest.TestCase):
         report = evaluate(factory, Policy("good"), seeds=(1, 2), max_steps=1)
         self.assertEqual(len(report.trajectories), 2)
         self.assertEqual(len(instances), 1)
+
+    def test_malformed_generation_is_logged_without_environment_fallback(self) -> None:
+        trajectory = collect_episode(Environment(), MalformedPolicy(), max_steps=3, seed=7)
+        self.assertEqual(trajectory.episode_length, 1)
+        self.assertTrue(trajectory.truncated)
+        self.assertEqual(trajectory.metadata["termination_reason"], "parser_failure")
+        step = trajectory.steps[0]
+        self.assertFalse(step.action_valid)
+        self.assertEqual(step.metadata["debug"]["parsed_action"], "")
+        self.assertEqual(step.metadata["debug"]["invalid_action_reason"], "not in valid actions")
+        self.assertEqual(step.metadata["debug"]["generated_token_count"], 4)

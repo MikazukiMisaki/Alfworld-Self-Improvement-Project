@@ -75,7 +75,14 @@ class QwenPolicy(ActionPolicy):
             reasoning=parsed.reasoning,
             model_version=self.model_version,
             token_statistics=self._token_statistics(generated, torch),
-            metadata={"prompt": prompt, "generation": self._generation_metadata()},
+            metadata={
+                "prompt": prompt,
+                "generation": self._generation_metadata(),
+                "parser": {
+                    "candidate": parsed.candidate,
+                    "invalid_reason": parsed.invalid_reason,
+                },
+            },
         )
 
     def _load(self) -> tuple[Any, Any, Any]:
