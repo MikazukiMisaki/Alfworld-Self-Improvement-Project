@@ -1,0 +1,54 @@
+Metadata-Version: 2.4
+Name: alfworld-self-improvement
+Version: 0.1.0
+Summary: Modular research framework for self-improving language models in ALFWorld.
+Author: ALFWorld Research
+License: MIT
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"
+Provides-Extra: baseline
+Requires-Dist: PyYAML>=6; extra == "baseline"
+
+# Alfworld-Self-Improvement
+
+Minimal reproducible baseline infrastructure for the thesis project
+“Recovery-Aware Intervention Selection for Small Language Agents.”
+
+## Sprint 1 scope
+
+ALFWorld → Qwen3-8B → trajectory collection → evaluation → JSONL export.
+
+Out of scope: selector, reflection, memory, intervention, DPO, PPO, and GRPO.
+
+## Repository layout
+
+    docs/        sprint, paper, TODO, and changelog documents
+    src/env/     environment contracts and ALFWorld adapter
+    src/models/  Qwen wrapper and action parser
+    src/trajectory/ canonical trajectory records, collector, and JSONL store
+    src/evaluation/ metrics and evaluation runner
+    src/utils/   small shared utilities
+    tests/       unit tests without external model/environment dependencies
+    configs/     baseline configuration
+    scripts/     runnable collection entry points
+    legacy/      reserved immutable legacy artifacts
+
+## Run a baseline
+
+Install the ALFWorld, PyTorch, Transformers, and PyYAML runtimes. Then set:
+
+    export ALFWORLD_CONFIG_PATH=/absolute/path/to/base_config.yaml
+    export ALFWORLD_DATA=/absolute/path/to/alfworld_data
+    python scripts/collect_baseline.py
+
+The script creates a unique results/baseline directory containing:
+
+- trajectory.jsonl
+- metrics.json
+- run_manifest.json
+
+## Tests
+
+    PYTHONPATH=src python -m unittest discover -s tests -v
