@@ -1,5 +1,11 @@
 """Model-facing policy abstractions."""
 
-from .policy import ActionPolicy
+from .policy import ActionDecision, ActionPolicy, ActionRequest, GenerationOptions, TokenStatistics
 
-__all__ = ["ActionPolicy"]
+__all__ = [
+    "ActionDecision",
+    "ActionPolicy",
+    "ActionRequest",
+    "GenerationOptions",
+    "TokenStatistics",
+]

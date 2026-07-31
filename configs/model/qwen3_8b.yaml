@@ -1,0 +1,9 @@
+model_id: Qwen/Qwen3-8B-Instruct
+device: auto
+dtype: bfloat16
+trust_remote_code: false
+generation:
+  max_new_tokens: 64
+  do_sample: false
+  temperature: null
+  top_p: null

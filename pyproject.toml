@@ -13,6 +13,7 @@ authors = [{name = "ALFWorld Research"}]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+baseline = ["PyYAML>=6"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

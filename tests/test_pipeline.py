@@ -3,37 +3,72 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from alfworld_research.env.base import ResetResult, Task, Transition
 from alfworld_research.evaluation.metrics import EvaluationMetrics
-from alfworld_research.preference.builder import build_pair
+from alfworld_research.models.policy import ActionDecision, ActionRequest, TokenStatistics
 from alfworld_research.trajectory.collector import collect_episode
 
 
 class Environment:
-    def reset(self, *, seed: int | None = None) -> tuple[str, dict[str, Any]]:
-        return "start", {"seed": seed}
+    def __init__(self) -> None:
+        self.task = Task("task-1", "choose good", "valid_seen", "toy")
 
-    def step(self, action: str) -> tuple[str, float, bool, dict[str, Any]]:
-        return "done", 1.0 if action == "good" else 0.0, True, {"success": action == "good"}
+    def reset(self, *, seed: int | None = None) -> ResetResult:
+        return ResetResult("start", self.task, ("good", "bad"), {"seed": seed})
+
+    def step(self, action: str) -> Transition:
+        return Transition(
+            observation="done",
+            reward=1.0 if action == "good" else 0.0,
+            done=True,
+            truncated=False,
+            valid_actions=("good", "bad"),
+            metadata={"success": action == "good"},
+        )
+
+    def get_task(self) -> Task:
+        return self.task
+
+    def get_valid_actions(self) -> tuple[str, ...]:
+        return ("good", "bad")
 
 
 class Policy:
+    model_version = "test-policy"
+
     def __init__(self, action: str) -> None:
         self.action = action
 
-    def act(self, observation: str, history: tuple[str, ...]) -> str:
-        return self.action
+    def act(self, request: ActionRequest) -> ActionDecision:
+        return ActionDecision(
+            action=self.action,
+            raw_output=f"Action: {self.action}",
+            parser_status="grounded",
+            model_version=self.model_version,
+            token_statistics=TokenStatistics(1, -0.1, 0.2),
+        )
 
 
 class PipelineTests(unittest.TestCase):
-    def test_collection_and_metrics(self) -> None:
-        trajectory = collect_episode(Environment(), Policy("good"), seed=7)
-        self.assertEqual(trajectory.total_reward, 1.0)
+    def test_collection_preserves_baseline_provenance(self) -> None:
+        trajectory = collect_episode(Environment(), Policy("good"), max_steps=3, seed=7)
+        step = trajectory.steps[0]
+        self.assertEqual(trajectory.task.task_id, "task-1")
+        self.assertEqual(trajectory.task.split, "valid_seen")
+        self.assertEqual(trajectory.model_version, "test-policy")
+        self.assertEqual(trajectory.seed, 7)
+        self.assertEqual(step.index, 0)
+        self.assertEqual(step.observation, "start")
+        self.assertEqual(step.action, "good")
+        self.assertEqual(step.model_output, "Action: good")
+        self.assertEqual(step.token_statistics.generated_tokens, 1)
+        self.assertTrue(step.done)
         self.assertTrue(trajectory.succeeded)
-        self.assertEqual(EvaluationMetrics.from_trajectories([trajectory]).success_rate, 1.0)
 
-    def test_preference_ranks_higher_reward(self) -> None:
-        good = collect_episode(Environment(), Policy("good"))
-        bad = collect_episode(Environment(), Policy("bad"))
-        example = build_pair(bad, good)
-        self.assertEqual(example.chosen, "good")
-        self.assertEqual(example.rejected, "bad")
+    def test_metrics_include_length_actions_and_tokens(self) -> None:
+        trajectory = collect_episode(Environment(), Policy("good"), max_steps=3, seed=7)
+        metrics = EvaluationMetrics.from_trajectories([trajectory])
+        self.assertEqual(metrics.success_rate, 1.0)
+        self.assertEqual(metrics.mean_episode_length, 1.0)
+        self.assertEqual(metrics.invalid_action_rate, 0.0)
+        self.assertEqual(metrics.mean_generated_tokens, 1.0)

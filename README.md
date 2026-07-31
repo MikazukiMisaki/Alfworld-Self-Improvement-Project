@@ -25,3 +25,12 @@ python3 -m alfworld_research.experiments.run_demo
 
 The demo uses a deterministic toy environment. Replace it with an ALFWorld
 adapter and a model policy without changing the collector or evaluator APIs.
+
+## Baseline collection
+
+Set ALFWORLD_CONFIG_PATH and ALFWORLD_DATA, then run:
+
+    PYTHONPATH=src python3 scripts/collect_baseline.py --config configs/collection/baseline.yaml
+
+The script writes a unique results directory containing a manifest, JSONL
+trajectories, and aggregate metrics.

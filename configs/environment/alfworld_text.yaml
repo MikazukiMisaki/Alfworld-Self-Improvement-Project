@@ -1,0 +1,5 @@
+# Paths are expanded from the environment when the collection script runs.
+config_path: ${ALFWORLD_CONFIG_PATH}
+data_path: ${ALFWORLD_DATA}
+split: valid_seen
+batch_size: 1
