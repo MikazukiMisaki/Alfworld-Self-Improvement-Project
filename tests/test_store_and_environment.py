@@ -51,3 +51,9 @@ class StoreAndEnvironmentTests(unittest.TestCase):
         self.assertEqual(task.task_id, "game_001")
         self.assertEqual(task.text, "heat tomato 1 with microwave 1")
         self.assertEqual(task.split, "valid_unseen")
+
+    def test_alfworld_adapter_translates_validation_splits(self) -> None:
+        seen = AlfWorldTextEnvironment(AlfWorldConfig(Path("unused.yaml"), split="valid_seen"))
+        unseen = AlfWorldTextEnvironment(AlfWorldConfig(Path("unused.yaml"), split="valid_unseen"))
+        self.assertEqual(seen._alfworld_split(), "eval_in_distribution")
+        self.assertEqual(unseen._alfworld_split(), "eval_out_of_distribution")

@@ -96,7 +96,7 @@ class AlfWorldTextEnvironment:
             os.environ["ALFWORLD_DATA"] = str(self._config.data_path)
         with self._config.config_path.open("r", encoding="utf-8") as handle:
             configuration = yaml.safe_load(handle)
-        self._environment = AlfredTWEnv(configuration, train_eval=self._config.split)
+        self._environment = AlfredTWEnv(configuration, train_eval=self._alfworld_split())
         self._environment = self._environment.init_env(batch_size=self._config.batch_size)
         return self._environment
 
@@ -107,6 +107,20 @@ class AlfWorldTextEnvironment:
     @staticmethod
     def _info_dict(info: Any) -> dict[str, Any]:
         return info if isinstance(info, dict) else {"raw_info": repr(info)}
+
+    def _alfworld_split(self) -> str:
+        """Translate the public baseline split name to ALFWorld's API value."""
+        splits = {
+            "train": "train",
+            "valid_seen": "eval_in_distribution",
+            "valid_unseen": "eval_out_of_distribution",
+        }
+        try:
+            return splits[self._config.split]
+        except KeyError as error:
+            raise ValueError(
+                "split must be one of train, valid_seen, or valid_unseen"
+            ) from error
 
     @classmethod
     def _valid_actions_from_info(cls, info: dict[str, Any]) -> tuple[str, ...] | None:
