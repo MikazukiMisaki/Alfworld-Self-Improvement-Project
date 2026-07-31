@@ -1,0 +1,13 @@
+# Generated experiment outputs
+results/
+
+# Machine-specific ALFWorld configuration
+configs/local/
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local model and Hugging Face caches
+.hf_cache/
