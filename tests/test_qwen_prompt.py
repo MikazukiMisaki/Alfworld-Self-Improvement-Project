@@ -22,3 +22,17 @@ class QwenPromptTests(unittest.TestCase):
         self.assertIn("Do not alternate between locations", prompt)
         self.assertIn("Task: find two book and put them in desk", prompt)
         self.assertIn("- go to drawer 1", prompt)
+
+    def test_indexed_prompt_uses_deterministic_ids_and_strict_protocol(self) -> None:
+        prompt = QwenPolicy._indexed_prompt(
+            ActionRequest(
+                task=Task("task-1", "look around", "valid_seen"),
+                observation="You are in a room.",
+                history=(),
+                valid_actions=("look", "inventory"),
+            )
+        )
+        self.assertIn("Return exactly one line in this format:\nAction-ID: Axyz", prompt)
+        self.assertIn("[A000] look", prompt)
+        self.assertIn("[A001] inventory", prompt)
+        self.assertNotIn("Return exactly one line in this format: Action: <command>", prompt)

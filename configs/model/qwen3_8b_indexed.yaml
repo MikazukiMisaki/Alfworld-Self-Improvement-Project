@@ -2,11 +2,10 @@ model_id: Qwen/Qwen3-8B
 device: auto
 dtype: bfloat16
 trust_remote_code: false
-# ALFWorld is text-only and requires a command at every step. Disable Qwen3's
-# default reasoning block so the output budget is used for the command.
+# B1 maps one strict ephemeral ID back to the exact environment-owned action.
 enable_thinking: false
 action_selection:
-  mode: free_form_validated
+  mode: indexed_admissible
 generation:
   max_new_tokens: 32
   do_sample: false

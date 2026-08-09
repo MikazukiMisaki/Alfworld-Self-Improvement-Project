@@ -29,6 +29,7 @@ class BaselineSmokeSummary:
 
     run_id: str
     git_revision: str
+    action_selection_mode: str
     task_id: str
     termination_reason: str
     steps: int
@@ -97,6 +98,19 @@ def validate_baseline_artifacts(
     )
     model_config = _required_mapping(resolved_config, "model", "resolved config")
     generation_config = _required_mapping(model_config, "generation", "model config")
+    action_selection_config = _required_mapping(
+        model_config, "action_selection", "model config"
+    )
+    action_selection_mode = _required_string(
+        action_selection_config, "mode", "action selection config"
+    )
+    if action_selection_mode not in {
+        "free_form_validated",
+        "indexed_admissible",
+    }:
+        raise ArtifactValidationError(
+            f"unsupported action selection mode: {action_selection_mode!r}"
+        )
 
     if collection_config.get("episodes") != 1:
         raise ArtifactValidationError("resolved collection config must contain episodes=1")
@@ -133,8 +147,10 @@ def validate_baseline_artifacts(
 
     metadata = _required_mapping(trajectory, "metadata", "trajectory")
     termination_reason = _required_string(metadata, "termination_reason", "trajectory metadata")
-    if termination_reason == "parser_failure":
-        raise ArtifactValidationError("trajectory terminated with parser_failure")
+    if termination_reason in {"parser_failure", "selection_failure"}:
+        raise ArtifactValidationError(
+            f"trajectory terminated with {termination_reason}"
+        )
 
     steps = trajectory.get("steps")
     if not isinstance(steps, list) or not steps:
@@ -154,9 +170,16 @@ def validate_baseline_artifacts(
             )
         if step.get("action_valid") is not True:
             raise ArtifactValidationError(f"step {index} is not marked action_valid=true")
-        _required_string(step, "action", f"step {index}")
+        action = _required_string(step, "action", f"step {index}")
         if not isinstance(step.get("model_output"), str):
             raise ArtifactValidationError(f"step {index} is missing model_output")
+        step_metadata = _required_mapping(step, "metadata", f"step {index}")
+        if step_metadata.get("action_selection_mode") != action_selection_mode:
+            raise ArtifactValidationError(
+                f"step {index} action selection mode does not match manifest"
+            )
+        if action_selection_mode == "indexed_admissible":
+            _validate_indexed_selection(step, step_metadata, action, index)
         token_statistics = _required_mapping(
             step, "token_statistics", f"step {index}"
         )
@@ -182,6 +205,37 @@ def validate_baseline_artifacts(
         raise ArtifactValidationError("invalid_action_rate must be between 0 and 1")
     if invalid_action_rate >= 1.0:
         raise ArtifactValidationError("invalid_action_rate is 1.0")
+    parser_failure_rate = _required_rate(metrics, "parser_failure_rate")
+    inadmissible_candidate_rate = _required_rate(
+        metrics, "inadmissible_candidate_rate"
+    )
+    selection_failure_rate = _required_rate(metrics, "selection_failure_rate")
+    malformed_id_rate = _required_rate(metrics, "malformed_id_rate")
+    out_of_range_id_rate = _required_rate(metrics, "out_of_range_id_rate")
+    if action_selection_mode == "free_form_validated":
+        if any(
+            rate != 0.0
+            for rate in (
+                selection_failure_rate,
+                malformed_id_rate,
+                out_of_range_id_rate,
+            )
+        ):
+            raise ArtifactValidationError("B0 metrics contain B1 selection failures")
+    else:
+        if any(
+            rate != 0.0
+            for rate in (
+                invalid_action_rate,
+                parser_failure_rate,
+                inadmissible_candidate_rate,
+            )
+        ):
+            raise ArtifactValidationError("B1 metrics contain B0 invalid-action failures")
+        if selection_failure_rate != 0.0:
+            raise ArtifactValidationError("selection_failure_rate is nonzero")
+        if malformed_id_rate != 0.0 or out_of_range_id_rate != 0.0:
+            raise ArtifactValidationError("B1 ID failure metrics are nonzero")
     success_rate = _required_number(metrics, "success_rate", "metrics")
     if not 0.0 <= success_rate <= 1.0:
         raise ArtifactValidationError("success_rate must be between 0 and 1")
@@ -201,6 +255,7 @@ def validate_baseline_artifacts(
     return BaselineSmokeSummary(
         run_id=run_id,
         git_revision=git_revision,
+        action_selection_mode=action_selection_mode,
         task_id=task_id,
         termination_reason=termination_reason,
         steps=len(steps),
@@ -218,6 +273,7 @@ def print_summary(summary: BaselineSmokeSummary) -> None:
     """Print the approved concise smoke-test summary."""
     print(f"run_id: {summary.run_id}")
     print(f"git_revision: {summary.git_revision}")
+    print(f"action_selection_mode: {summary.action_selection_mode}")
     print(f"task_id: {summary.task_id}")
     print(f"termination_reason: {summary.termination_reason}")
     print(f"steps: {summary.steps}")
@@ -228,6 +284,66 @@ def print_summary(summary: BaselineSmokeSummary) -> None:
     print(f"parser_statuses: {', '.join(summary.parser_statuses)}")
     print(f"first_raw_output: {summary.first_raw_output!r}")
     print(f"first_parsed_action: {summary.first_parsed_action!r}")
+
+
+def _validate_indexed_selection(
+    step: dict[str, Any],
+    step_metadata: dict[str, Any],
+    action: str,
+    step_index: int,
+) -> None:
+    selection = _required_mapping(
+        step_metadata, "action_selection", f"step {step_index} metadata"
+    )
+    if selection.get("action_selection_mode") != "indexed_admissible":
+        raise ArtifactValidationError(
+            f"step {step_index} indexed selection metadata has the wrong mode"
+        )
+    if selection.get("selection_status") != "selected":
+        raise ArtifactValidationError(
+            f"step {step_index} selection status is not selected"
+        )
+    if selection.get("failure_reason") is not None:
+        raise ArtifactValidationError(
+            f"step {step_index} successful selection has a failure reason"
+        )
+    if selection.get("raw_model_output") != step.get("model_output"):
+        raise ArtifactValidationError(
+            f"step {step_index} selection raw output does not match the step"
+        )
+    action_id = _required_string(
+        selection, "parsed_action_id", f"step {step_index} selection"
+    )
+    selected_index = selection.get("selected_index")
+    if not isinstance(selected_index, int) or isinstance(selected_index, bool):
+        raise ArtifactValidationError(
+            f"step {step_index} selection has an invalid selected index"
+        )
+    if action_id != f"A{selected_index:03d}":
+        raise ArtifactValidationError(
+            f"step {step_index} action ID does not match selected index"
+        )
+    if selection.get("mapped_environment_command") != action:
+        raise ArtifactValidationError(
+            f"step {step_index} mapped command does not match executed action"
+        )
+    valid_actions = step.get("valid_actions")
+    if not isinstance(valid_actions, list) or not valid_actions:
+        raise ArtifactValidationError(
+            f"step {step_index} is missing its valid-action snapshot"
+        )
+    expected_mapping = {
+        f"A{index:03d}": command for index, command in enumerate(valid_actions)
+    }
+    mapping = selection.get("id_to_command")
+    if mapping != expected_mapping:
+        raise ArtifactValidationError(
+            f"step {step_index} ID mapping does not preserve valid-action order"
+        )
+    if mapping.get(action_id) != action:
+        raise ArtifactValidationError(
+            f"step {step_index} selected ID does not recover the executed command"
+        )
 
 
 def _read_json_object(path: Path) -> dict[str, Any]:
@@ -287,6 +403,13 @@ def _required_number(mapping: dict[str, Any], key: str, context: str) -> float:
     if not math.isfinite(result):
         raise ArtifactValidationError(f"{context} field {key!r} must be finite")
     return result
+
+
+def _required_rate(mapping: dict[str, Any], key: str) -> float:
+    value = _required_number(mapping, key, "metrics")
+    if not 0.0 <= value <= 1.0:
+        raise ArtifactValidationError(f"metrics field {key!r} must be between 0 and 1")
+    return value
 
 
 def _arguments() -> argparse.Namespace:

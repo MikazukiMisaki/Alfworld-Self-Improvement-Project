@@ -24,6 +24,7 @@ class BaselineArtifactValidatorTests(unittest.TestCase):
             )
 
         self.assertEqual(summary.reward, 0.0)
+        self.assertEqual(summary.action_selection_mode, "free_form_validated")
         self.assertEqual(summary.parser_statuses, ("grounded",))
         self.assertEqual(summary.first_parsed_action, "look")
 
@@ -78,6 +79,20 @@ class BaselineArtifactValidatorTests(unittest.TestCase):
                     run_directory, expected_git_revision="different"
                 )
 
+    def test_indexed_artifact_mapping_passes(self) -> None:
+        with self._run_directory(self._indexed_artifacts()) as run_directory:
+            summary = validate_baseline_artifacts(run_directory)
+        self.assertEqual(summary.action_selection_mode, "indexed_admissible")
+
+    def test_indexed_artifact_mapping_mismatch_fails(self) -> None:
+        artifacts = self._indexed_artifacts()
+        artifacts["trajectory"]["steps"][0]["metadata"]["action_selection"][
+            "id_to_command"
+        ]["A000"] = "inventory"
+        with self._run_directory(artifacts) as run_directory:
+            with self.assertRaisesRegex(ArtifactValidationError, "does not preserve"):
+                validate_baseline_artifacts(run_directory)
+
     def test_cli_prints_pass_as_final_status(self) -> None:
         with self._run_directory() as run_directory:
             stdout = io.StringIO()
@@ -121,7 +136,20 @@ class BaselineArtifactValidatorTests(unittest.TestCase):
                     "parser_status": "grounded",
                     "valid_actions": ["look", "inventory"],
                     "action_valid": True,
-                    "metadata": {"debug": {"invalid_action_reason": None}},
+                    "metadata": {
+                        "action_selection_mode": "free_form_validated",
+                        "action_selection": {
+                            "action_selection_mode": "free_form_validated",
+                            "raw_model_output": "Action: look",
+                            "parsed_action_id": None,
+                            "selected_index": None,
+                            "mapped_environment_command": "look",
+                            "id_to_command": {},
+                            "selection_status": "not_applicable",
+                            "failure_reason": None,
+                        },
+                        "debug": {"invalid_action_reason": None},
+                    },
                 }
             )
         return {
@@ -145,6 +173,7 @@ class BaselineArtifactValidatorTests(unittest.TestCase):
                         "device": "auto",
                         "dtype": "bfloat16",
                         "enable_thinking": False,
+                        "action_selection": {"mode": "free_form_validated"},
                         "generation": {
                             "max_new_tokens": 32,
                             "do_sample": False,
@@ -162,7 +191,12 @@ class BaselineArtifactValidatorTests(unittest.TestCase):
                 "success_rate": 0.0,
                 "mean_reward": 0.0,
                 "mean_episode_length": float(step_count),
+                "parser_failure_rate": 0.0,
+                "inadmissible_candidate_rate": 0.0,
                 "invalid_action_rate": 0.0,
+                "selection_failure_rate": 0.0,
+                "malformed_id_rate": 0.0,
+                "out_of_range_id_rate": 0.0,
                 "mean_generated_tokens": float(4 * step_count),
             },
             "trajectory": {
@@ -187,6 +221,26 @@ class BaselineArtifactValidatorTests(unittest.TestCase):
                 },
             },
         }
+
+    def _indexed_artifacts(self) -> dict[str, dict]:
+        artifacts = self._artifacts()
+        artifacts["manifest"]["resolved_config"]["model"]["action_selection"][
+            "mode"
+        ] = "indexed_admissible"
+        step = artifacts["trajectory"]["steps"][0]
+        step["model_output"] = "Action-ID: A000"
+        step["metadata"]["action_selection_mode"] = "indexed_admissible"
+        step["metadata"]["action_selection"] = {
+            "action_selection_mode": "indexed_admissible",
+            "raw_model_output": "Action-ID: A000",
+            "parsed_action_id": "A000",
+            "selected_index": 0,
+            "mapped_environment_command": "look",
+            "id_to_command": {"A000": "look", "A001": "inventory"},
+            "selection_status": "selected",
+            "failure_reason": None,
+        }
+        return artifacts
 
     class _RunDirectory:
         def __init__(self, artifacts: dict[str, dict]) -> None:

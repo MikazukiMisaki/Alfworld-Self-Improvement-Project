@@ -7,6 +7,8 @@ from dataclasses import dataclass
 
 _ACTION_PREFIX = re.compile(r"^\s*(?:action|command)\s*:\s*", re.IGNORECASE)
 _THOUGHT_PREFIX = re.compile(r"^\s*(?:thought|reasoning)\s*:\s*", re.IGNORECASE)
+_ACTION_ID_LINE = re.compile(r"^Action-ID:\s*(A\d{3})$")
+_ACTION_ID_ANYWHERE = re.compile(r"Action-ID:\s*(A\d{3})")
 
 
 @dataclass(frozen=True)
@@ -17,6 +19,17 @@ class ParsedAction:
     status: str
     reasoning: str | None = None
     candidate: str | None = None
+    invalid_reason: str | None = None
+
+
+@dataclass(frozen=True)
+class ParsedActionId:
+    """Strict indexed-selection result mapped to an environment-owned command."""
+
+    action: str
+    action_id: str | None
+    selected_index: int | None
+    status: str
     invalid_reason: str | None = None
 
 
@@ -71,3 +84,49 @@ def parse_action(output: str, valid_actions: tuple[str, ...] | None = None) -> P
     if canonical is None:
         return ParsedAction("", "not_admissible", reasoning, candidate, "not in valid actions")
     return ParsedAction(canonical, "grounded", reasoning, candidate)
+
+
+def action_id_mapping(valid_actions: tuple[str, ...]) -> dict[str, str]:
+    """Assign stable ephemeral IDs while preserving environment action order."""
+    if len(valid_actions) > 1000:
+        raise ValueError("indexed action selection supports at most 1000 actions")
+    return {f"A{index:03d}": action for index, action in enumerate(valid_actions)}
+
+
+def parse_action_id(output: str, valid_actions: tuple[str, ...] | None) -> ParsedActionId:
+    """Parse exactly one ``Action-ID: Axyz`` line without repair or fallback."""
+    if valid_actions is None or not valid_actions:
+        return ParsedActionId(
+            "", None, None, "malformed_id", "no admissible actions available"
+        )
+
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    embedded_ids = _ACTION_ID_ANYWHERE.findall(output)
+    if len(embedded_ids) > 1:
+        return ParsedActionId(
+            "", None, None, "ambiguous_id", "multiple action IDs"
+        )
+    if len(lines) != 1:
+        return ParsedActionId(
+            "", None, None, "malformed_id", "expected exactly one output line"
+        )
+
+    match = _ACTION_ID_LINE.fullmatch(lines[0])
+    if match is None:
+        return ParsedActionId(
+            "", None, None, "malformed_id", "expected exactly Action-ID: Axyz"
+        )
+
+    action_id = match.group(1)
+    selected_index = int(action_id[1:])
+    mapping = action_id_mapping(valid_actions)
+    action = mapping.get(action_id)
+    if action is None:
+        return ParsedActionId(
+            "",
+            action_id,
+            selected_index,
+            "out_of_range_id",
+            "action ID is outside the admissible-action range",
+        )
+    return ParsedActionId(action, action_id, selected_index, "selected")

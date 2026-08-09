@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from .action_parser import parse_action
+from .action_parser import action_id_mapping, parse_action, parse_action_id
 from .policy import ActionDecision, ActionPolicy, ActionRequest, GenerationOptions, TokenStatistics
 
 
@@ -19,6 +19,16 @@ class QwenPolicyConfig:
     trust_remote_code: bool = False
     enable_thinking: bool = False
     generation: GenerationOptions = GenerationOptions()
+    action_selection_mode: str = "free_form_validated"
+
+    def __post_init__(self) -> None:
+        if self.action_selection_mode not in {
+            "free_form_validated",
+            "indexed_admissible",
+        }:
+            raise ValueError(
+                "action_selection_mode must be free_form_validated or indexed_admissible"
+            )
 
 
 class QwenPolicy(ActionPolicy):
@@ -37,7 +47,11 @@ class QwenPolicy(ActionPolicy):
     def act(self, request: ActionRequest) -> ActionDecision:
         """Generate, parse, and record one action without environment side effects."""
         tokenizer, model, torch = self._load()
-        prompt = self._prompt(request)
+        prompt = (
+            self._indexed_prompt(request)
+            if self._config.action_selection_mode == "indexed_admissible"
+            else self._prompt(request)
+        )
         messages = [{"role": "user", "content": prompt}]
         if hasattr(tokenizer, "apply_chat_template"):
             rendered = tokenizer.apply_chat_template(
@@ -67,6 +81,8 @@ class QwenPolicy(ActionPolicy):
         input_tokens = inputs["input_ids"].shape[1]
         generated_tokens = generated.sequences[0][input_tokens:]
         raw_output = tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
+        if self._config.action_selection_mode == "indexed_admissible":
+            return self._indexed_decision(request, prompt, raw_output, generated, torch)
         parsed = parse_action(raw_output, request.valid_actions)
         return ActionDecision(
             action=parsed.action,
@@ -77,9 +93,61 @@ class QwenPolicy(ActionPolicy):
             token_statistics=self._token_statistics(generated, torch),
             metadata={
                 "prompt": prompt,
+                "prompt_version": "free-form-action-v1",
                 "generation": self._generation_metadata(),
+                "action_selection_mode": "free_form_validated",
+                "action_selection": {
+                    "action_selection_mode": "free_form_validated",
+                    "raw_model_output": raw_output,
+                    "parsed_action_id": None,
+                    "selected_index": None,
+                    "mapped_environment_command": parsed.action or None,
+                    "id_to_command": {},
+                    "selection_status": "not_applicable",
+                    "failure_reason": None,
+                },
                 "parser": {
                     "candidate": parsed.candidate,
+                    "invalid_reason": parsed.invalid_reason,
+                },
+            },
+        )
+
+    def _indexed_decision(
+        self,
+        request: ActionRequest,
+        prompt: str,
+        raw_output: str,
+        generated: Any,
+        torch: Any,
+    ) -> ActionDecision:
+        """Map one strict action ID to the exact environment-owned command."""
+        parsed = parse_action_id(raw_output, request.valid_actions)
+        mapping = action_id_mapping(request.valid_actions or ())
+        return ActionDecision(
+            action=parsed.action,
+            raw_output=raw_output,
+            parser_status="grounded" if parsed.status == "selected" else parsed.status,
+            reasoning=None,
+            model_version=self.model_version,
+            token_statistics=self._token_statistics(generated, torch),
+            metadata={
+                "prompt": prompt,
+                "prompt_version": "indexed-admissible-action-v1",
+                "generation": self._generation_metadata(),
+                "action_selection_mode": "indexed_admissible",
+                "action_selection": {
+                    "action_selection_mode": "indexed_admissible",
+                    "raw_model_output": raw_output,
+                    "parsed_action_id": parsed.action_id,
+                    "selected_index": parsed.selected_index,
+                    "mapped_environment_command": parsed.action or None,
+                    "id_to_command": mapping,
+                    "selection_status": parsed.status,
+                    "failure_reason": parsed.invalid_reason,
+                },
+                "parser": {
+                    "candidate": parsed.action_id,
                     "invalid_reason": parsed.invalid_reason,
                 },
             },
@@ -143,6 +211,37 @@ class QwenPolicy(ActionPolicy):
             "Action:"
         )
 
+    @staticmethod
+    def _indexed_prompt(request: ActionRequest) -> str:
+        mapping = action_id_mapping(request.valid_actions or ())
+        valid_actions = (
+            "\n".join(f"[{action_id}] {action}" for action_id, action in mapping.items())
+            if mapping
+            else "No admissible action list is available."
+        )
+        history = "\n".join(
+            f"Observation: {observation}\nAction: {action}"
+            for observation, action in request.history
+        )
+        return (
+            "You are an ALFWorld household agent. Select exactly one next action ID.\n"
+            "Return exactly one line in this format:\n"
+            "Action-ID: Axyz\n"
+            "Choose one ID exactly as written in the indexed valid-actions list. "
+            "Do not output a command, explanation, reasoning, or <think> tags.\n\n"
+            "Decision rules:\n"
+            "1. Keep pursuing the stated task until it is complete.\n"
+            "2. Only take, move, heat, cool, or clean an object required by the task.\n"
+            "3. When searching, inspect unexamined plausible locations before revisiting one.\n"
+            "4. Do not alternate between locations or undo recent progress without a task-related reason.\n"
+            "5. After taking a required object, use the task destination or required transformation.\n\n"
+            f"Task: {request.task.text}\n"
+            f"History:\n{history or '(none)'}\n\n"
+            f"Current observation:\n{request.observation}\n\n"
+            f"Indexed valid actions:\n{valid_actions}\n\n"
+            "Your response:"
+        )
+
     def _generation_metadata(self) -> dict[str, Any]:
         options = self._config.generation
         return {
@@ -151,6 +250,7 @@ class QwenPolicy(ActionPolicy):
             "temperature": options.temperature,
             "top_p": options.top_p,
             "enable_thinking": self._config.enable_thinking,
+            "action_selection_mode": self._config.action_selection_mode,
         }
 
     @staticmethod

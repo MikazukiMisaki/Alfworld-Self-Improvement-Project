@@ -28,7 +28,8 @@ def collect_episode(
     steps: list[Step] = []
     started_at = utc_timestamp()
     terminal = False
-    parser_failure = False
+    decision_failure = False
+    failure_termination_reason: str | None = None
     for index in range(max_steps):
         decision = policy.act(
             ActionRequest(
@@ -38,15 +39,22 @@ def collect_episode(
                 valid_actions=valid_actions,
             )
         )
+        selection = _action_selection_metadata(decision)
+        selection_mode = str(selection["action_selection_mode"])
         action_valid = is_valid_action(decision.action, valid_actions)
-        invalid_reason = _invalid_action_reason(decision, action_valid)
+        invalid_reason = _decision_failure_reason(decision, action_valid, selection)
         if invalid_reason is None:
             transition = environment.step(decision.action)
         else:
             # Never turn malformed generation into an arbitrary environment
             # command. Preserve the failed decision and stop this episode.
             transition = None
-            parser_failure = True
+            decision_failure = True
+            failure_termination_reason = (
+                "selection_failure"
+                if selection_mode == "indexed_admissible"
+                else "parser_failure"
+            )
         steps.append(
             Step(
                 index=index,
@@ -63,6 +71,8 @@ def collect_episode(
                 action_valid=action_valid,
                 metadata={
                     "policy": decision.metadata,
+                    "action_selection_mode": selection_mode,
+                    "action_selection": selection,
                     "environment": transition.metadata if transition is not None else {},
                     "transition_truncated": transition.truncated if transition is not None else True,
                     "debug": {
@@ -80,7 +90,7 @@ def collect_episode(
                 },
             )
         )
-        if parser_failure:
+        if decision_failure:
             break
         history.append((observation, decision.action))
         assert transition is not None
@@ -98,17 +108,52 @@ def collect_episode(
         steps=tuple(steps),
         started_at=started_at,
         completed_at=utc_timestamp(),
-        truncated=parser_failure or not terminal,
+        truncated=decision_failure or not terminal,
         metadata={
             "reset": reset.metadata,
             "max_steps": max_steps,
-            "termination_reason": "parser_failure" if parser_failure else "environment_terminal" if terminal else "max_steps",
+            "termination_reason": failure_termination_reason or (
+                "environment_terminal" if terminal else "max_steps"
+            ),
         },
     )
 
 
-def _invalid_action_reason(decision: Any, action_valid: bool | None) -> str | None:
-    """Describe why an action is not safe to send to a constrained environment."""
+def _action_selection_metadata(decision: Any) -> dict[str, Any]:
+    """Return explicit selection metadata, defaulting legacy decisions to B0."""
+    metadata = decision.metadata if isinstance(decision.metadata, dict) else {}
+    selection = metadata.get("action_selection")
+    if isinstance(selection, dict):
+        return dict(selection)
+    return {
+        "action_selection_mode": "free_form_validated",
+        "raw_model_output": decision.raw_output,
+        "parsed_action_id": None,
+        "selected_index": None,
+        "mapped_environment_command": decision.action or None,
+        "id_to_command": {},
+        "selection_status": "not_applicable",
+        "failure_reason": None,
+    }
+
+
+def _decision_failure_reason(
+    decision: Any,
+    action_valid: bool | None,
+    selection: dict[str, Any],
+) -> str | None:
+    """Describe why a decision cannot safely reach the environment."""
+    if selection.get("action_selection_mode") == "indexed_admissible":
+        if selection.get("selection_status") != "selected":
+            return str(
+                selection.get("failure_reason")
+                or selection.get("selection_status")
+                or "selection failure"
+            )
+        if action_valid is not True:
+            return "mapped action is not in valid actions"
+        return None
+
     parser = decision.metadata.get("parser", {}) if isinstance(decision.metadata, dict) else {}
     if decision.parser_status != "grounded" and action_valid is not None:
         return str(parser.get("invalid_reason") or decision.parser_status)

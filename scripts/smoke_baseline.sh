@@ -12,7 +12,7 @@ fail() {
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 EXPECTED_CONDA_ENV="alfworld-self-improve"
-BASELINE_CONFIG="${PROJECT_ROOT}/configs/collection/baseline.yaml"
+BASELINE_CONFIG="${BASELINE_CONFIG:-${PROJECT_ROOT}/configs/collection/baseline_indexed.yaml}"
 
 cd "${PROJECT_ROOT}" || fail "cannot enter repository root"
 
@@ -61,19 +61,24 @@ if not model_path.is_absolute():
     model_path = project_root / model_path
 model = yaml.safe_load(model_path.read_text(encoding="utf-8"))
 generation = model.get("generation", {})
+action_selection = model.get("action_selection", {})
 if model.get("enable_thinking") is not False:
     raise SystemExit("enable_thinking must be false")
 if generation.get("max_new_tokens") != 32:
     raise SystemExit("max_new_tokens must be 32")
+mode = action_selection.get("mode")
+if mode not in {"free_form_validated", "indexed_admissible"}:
+    raise SystemExit("action_selection.mode is missing or unsupported")
 output_dir = Path(collection["output_dir"])
 if not output_dir.is_absolute():
     output_dir = project_root / output_dir
-print(output_dir.resolve())
+print(f"{mode}\t{output_dir.resolve()}")
 PY
 )" || fail "portable baseline configuration preflight failed"
-OUTPUT_DIR="${CONFIG_OUTPUT}"
+IFS=$'\t' read -r ACTION_SELECTION_MODE OUTPUT_DIR <<< "${CONFIG_OUTPUT}"
 echo "enable_thinking: false"
 echo "max_new_tokens: 32"
+echo "action_selection_mode: ${ACTION_SELECTION_MODE}"
 
 GIT_REVISION="$(git rev-parse HEAD 2>/dev/null)" || fail "cannot resolve Git revision"
 GIT_STATUS="$(git status --porcelain --untracked-files=all 2>/dev/null)" \

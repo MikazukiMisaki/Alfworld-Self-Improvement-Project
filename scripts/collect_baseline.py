@@ -136,6 +136,11 @@ def _policy(config: dict[str, Any]) -> QwenPolicy:
             dtype=str(config.get("dtype", "bfloat16")),
             trust_remote_code=bool(config.get("trust_remote_code", False)),
             enable_thinking=bool(config.get("enable_thinking", False)),
+            action_selection_mode=str(
+                config.get("action_selection", {}).get(
+                    "mode", "free_form_validated"
+                )
+            ),
             generation=generation,
         )
     )

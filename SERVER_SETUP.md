@@ -262,3 +262,40 @@ git grep -n '/home_lab/'
 New university paths may appear in ignored local files and this setup guide,
 but never in research code, portable experiment configs, or committed runtime
 artifacts outside explicit run provenance.
+
+## Sprint 1.5 B0/B1 controlled pilot
+
+The two collection configs differ only in action-selection mode. Both use the
+same `valid_seen` environment, seeds 42--44, maximum horizon, model, decoding
+settings, and environment-provided action order. This is a small diagnostic,
+not a Sprint 2 experiment.
+
+```bash
+conda activate alfworld-self-improve
+cd /home/lizening/Alfworld-Self-Improvement-Project
+source configs/local/activate_university_server.sh
+
+PAIR_TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+
+python scripts/collect_baseline.py \
+  --config configs/collection/baseline.yaml \
+  --episodes 3 \
+  --run-name "sprint1-5-b0-${PAIR_TIMESTAMP}"
+
+python scripts/collect_baseline.py \
+  --config configs/collection/baseline_indexed.yaml \
+  --episodes 3 \
+  --run-name "sprint1-5-b1-${PAIR_TIMESTAMP}"
+```
+
+Run the default one-episode B1 smoke test with:
+
+```bash
+bash scripts/smoke_baseline.sh
+```
+
+Run the same wrapper in B0 mode when a free-form diagnostic is needed:
+
+```bash
+BASELINE_CONFIG=configs/collection/baseline.yaml bash scripts/smoke_baseline.sh
+```

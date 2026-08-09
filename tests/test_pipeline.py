@@ -64,6 +64,25 @@ class MalformedPolicy:
         )
 
 
+class MissingActionPolicy:
+    model_version = "missing-action-policy"
+
+    def act(self, request: ActionRequest) -> ActionDecision:
+        return ActionDecision(
+            action="",
+            raw_output="Thought: inspect the room",
+            parser_status="missing_action",
+            model_version=self.model_version,
+            token_statistics=TokenStatistics(4, -0.1, 0.2),
+            metadata={
+                "parser": {
+                    "candidate": None,
+                    "invalid_reason": "no explicit action",
+                }
+            },
+        )
+
+
 class PipelineTests(unittest.TestCase):
     def test_collection_preserves_baseline_provenance(self) -> None:
         trajectory = collect_episode(Environment(), Policy("good"), max_steps=3, seed=7)
@@ -86,6 +105,9 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(metrics.success_rate, 1.0)
         self.assertEqual(metrics.mean_episode_length, 1.0)
         self.assertEqual(metrics.invalid_action_rate, 0.0)
+        self.assertEqual(metrics.parser_failure_rate, 0.0)
+        self.assertEqual(metrics.inadmissible_candidate_rate, 0.0)
+        self.assertEqual(metrics.selection_failure_rate, 0.0)
         self.assertEqual(metrics.mean_generated_tokens, 1.0)
 
     def test_evaluation_reuses_one_environment(self) -> None:
@@ -110,3 +132,20 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(step.metadata["debug"]["parsed_action"], "")
         self.assertEqual(step.metadata["debug"]["invalid_action_reason"], "not in valid actions")
         self.assertEqual(step.metadata["debug"]["generated_token_count"], 4)
+
+        metrics = EvaluationMetrics.from_trajectories([trajectory])
+        self.assertEqual(metrics.parser_failure_rate, 0.0)
+        self.assertEqual(metrics.inadmissible_candidate_rate, 1.0)
+        self.assertEqual(metrics.invalid_action_rate, 1.0)
+        self.assertEqual(metrics.selection_failure_rate, 0.0)
+
+    def test_b0_parser_failure_rate_is_separate_from_inadmissibility(self) -> None:
+        trajectory = collect_episode(
+            Environment(), MissingActionPolicy(), max_steps=3, seed=7
+        )
+        metrics = EvaluationMetrics.from_trajectories([trajectory])
+        self.assertEqual(trajectory.metadata["termination_reason"], "parser_failure")
+        self.assertEqual(metrics.parser_failure_rate, 1.0)
+        self.assertEqual(metrics.inadmissible_candidate_rate, 0.0)
+        self.assertEqual(metrics.invalid_action_rate, 1.0)
+        self.assertEqual(metrics.selection_failure_rate, 0.0)
