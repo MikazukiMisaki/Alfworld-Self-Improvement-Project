@@ -23,4 +23,5 @@ src/trajectory/trajectory.py
 src/utils/__init__.py
 tests/test_action_parser.py
 tests/test_pipeline.py
+tests/test_qwen_prompt.py
 tests/test_store_and_environment.py
