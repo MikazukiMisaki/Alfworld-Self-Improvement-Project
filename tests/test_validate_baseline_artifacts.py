@@ -79,6 +79,13 @@ class BaselineArtifactValidatorTests(unittest.TestCase):
                     run_directory, expected_git_revision="different"
                 )
 
+    def test_missing_git_revision_passes_when_not_expected(self) -> None:
+        artifacts = self._artifacts()
+        artifacts["manifest"]["git_revision"] = None
+        with self._run_directory(artifacts) as run_directory:
+            summary = validate_baseline_artifacts(run_directory)
+        self.assertIsNone(summary.git_revision)
+
     def test_indexed_artifact_mapping_passes(self) -> None:
         with self._run_directory(self._indexed_artifacts()) as run_directory:
             summary = validate_baseline_artifacts(run_directory)
