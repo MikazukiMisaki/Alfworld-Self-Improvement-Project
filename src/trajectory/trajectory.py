@@ -81,6 +81,9 @@ class RunManifest:
     resolved_config: dict[str, Any]
     seed_schedule: tuple[int, ...]
     git_revision: str | None = None
+    pipeline_version: str = "unknown"
+    action_selection_mode: str = "unknown"
+    split: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

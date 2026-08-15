@@ -3,4 +3,4 @@ model_config: configs/model/qwen3_8b.yaml
 episodes: 10
 seed_start: 42
 max_steps: 50
-output_dir: results/baseline
+output_dir: artifacts/runtime/baseline

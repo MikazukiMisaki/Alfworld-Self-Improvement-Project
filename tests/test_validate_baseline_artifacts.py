@@ -72,6 +72,13 @@ class BaselineArtifactValidatorTests(unittest.TestCase):
             with self.assertRaisesRegex(ArtifactValidationError, "enable_thinking"):
                 validate_baseline_artifacts(run_directory)
 
+    def test_missing_explicit_pipeline_version_fails(self) -> None:
+        artifacts = self._artifacts()
+        del artifacts["manifest"]["pipeline_version"]
+        with self._run_directory(artifacts) as run_directory:
+            with self.assertRaisesRegex(ArtifactValidationError, "pipeline_version"):
+                validate_baseline_artifacts(run_directory)
+
     def test_git_revision_mismatch_fails(self) -> None:
         with self._run_directory() as run_directory:
             with self.assertRaisesRegex(ArtifactValidationError, "git revision mismatch"):
@@ -193,6 +200,7 @@ class BaselineArtifactValidatorTests(unittest.TestCase):
                     },
                     "model": {
                         "model_id": "Qwen/Qwen3-8B",
+                        "pipeline_version": "free_form_v1",
                         "device": "auto",
                         "dtype": "bfloat16",
                         "enable_thinking": False,
@@ -207,6 +215,9 @@ class BaselineArtifactValidatorTests(unittest.TestCase):
                 },
                 "seed_schedule": [42],
                 "git_revision": "abc123",
+                "pipeline_version": "free_form_v1",
+                "action_selection_mode": "free_form_validated",
+                "split": "valid_seen",
                 "metadata": {},
             },
             "metrics": {
@@ -250,6 +261,11 @@ class BaselineArtifactValidatorTests(unittest.TestCase):
         artifacts["manifest"]["resolved_config"]["model"]["action_selection"][
             "mode"
         ] = "indexed_admissible"
+        artifacts["manifest"]["resolved_config"]["model"][
+            "pipeline_version"
+        ] = "indexed_v1"
+        artifacts["manifest"]["pipeline_version"] = "indexed_v1"
+        artifacts["manifest"]["action_selection_mode"] = "indexed_admissible"
         step = artifacts["trajectory"]["steps"][0]
         step["model_output"] = "Action-ID: A000"
         step["metadata"]["action_selection_mode"] = "indexed_admissible"

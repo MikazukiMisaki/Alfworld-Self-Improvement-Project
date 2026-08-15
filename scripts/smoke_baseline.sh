@@ -62,6 +62,7 @@ if not model_path.is_absolute():
 model = yaml.safe_load(model_path.read_text(encoding="utf-8"))
 generation = model.get("generation", {})
 action_selection = model.get("action_selection", {})
+pipeline_version = model.get("pipeline_version")
 if model.get("enable_thinking") is not False:
     raise SystemExit("enable_thinking must be false")
 if generation.get("max_new_tokens") != 32:
@@ -69,6 +70,12 @@ if generation.get("max_new_tokens") != 32:
 mode = action_selection.get("mode")
 if mode not in {"free_form_validated", "indexed_admissible"}:
     raise SystemExit("action_selection.mode is missing or unsupported")
+expected_pipeline = {
+    "free_form_validated": "free_form_v1",
+    "indexed_admissible": "indexed_v1",
+}[mode]
+if pipeline_version != expected_pipeline:
+    raise SystemExit("pipeline_version does not match action_selection.mode")
 output_dir = Path(collection["output_dir"])
 if not output_dir.is_absolute():
     output_dir = project_root / output_dir
