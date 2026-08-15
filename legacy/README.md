@@ -10,3 +10,11 @@ corpus are not present in this checkout or elsewhere in the audited server
 workspace as of the 2026-08-15 audit. No legacy success case can therefore be verified or
 imported from the available files. Do not reconstruct or fabricate those cases
 from aggregate counts in planning documents.
+
+## Future import rule
+
+Recovered legacy trajectories must remain immutable. Do not rewrite them to
+match the current manifest schema. A future verified import must instead add a
+sidecar provenance record containing source hashes, the original location and
+revision when available, task ID, split, seed, and legacy pipeline identity.
+The importer is intentionally not implemented during Sprint 1.5.

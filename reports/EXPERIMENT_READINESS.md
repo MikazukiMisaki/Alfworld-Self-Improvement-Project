@@ -84,9 +84,12 @@ records SHA-256 hashes and marks missing files and implicit historical fields.
 
 ## C. Data isolation status
 
-- Existing `results/` files were not deleted, moved, rewritten, or untracked.
-- `results/` is documented as an immutable historical archive; new files there
-  are ignored while its README remains tracked.
+- Runtime artifact files under `results/` were intentionally removed from Git
+  tracking. They were not moved or rewritten and remain available locally on
+  the audited server, where `results/` is ignored; only its README is tracked.
+- Provenance for the locally retained runtime artifacts is preserved in
+  `reports/result_provenance.json` and `reports/result_provenance.md`, including
+  the audit inventory and recorded SHA-256 hashes.
 - Portable collection configs now write to ignored `artifacts/runtime/`.
 - `artifacts/README.md` distinguishes real runtime evidence from fixtures.
 - `tests/fixtures/README.md` reserves fixtures for small synthetic data only.
