@@ -28,7 +28,7 @@ class BaselineSmokeSummary:
     """Concise fields printed after a baseline artifact validation."""
 
     run_id: str
-    git_revision: str
+    git_revision: str | None
     action_selection_mode: str
     task_id: str
     termination_reason: str
@@ -75,7 +75,9 @@ def validate_baseline_artifacts(
         raise ArtifactValidationError(
             f"run_id {run_id!r} does not match directory {run_directory.name!r}"
         )
-    git_revision = _required_string(manifest, "git_revision", "run manifest")
+    git_revision = manifest.get("git_revision")
+    if git_revision is not None and not isinstance(git_revision, str):
+        raise ArtifactValidationError("run manifest field 'git_revision' must be a string or null")
     if expected_git_revision is not None and git_revision != expected_git_revision:
         raise ArtifactValidationError(
             f"git revision mismatch: manifest={git_revision}, expected={expected_git_revision}"
