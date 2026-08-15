@@ -1,0 +1,8 @@
+{
+  "episodes": 1,
+  "invalid_action_rate": 0.0,
+  "mean_episode_length": 50.0,
+  "mean_generated_tokens": 386.0,
+  "mean_reward": 0.0,
+  "success_rate": 0.0
+}
