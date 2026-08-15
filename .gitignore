@@ -19,3 +19,5 @@ hf_cache/
 
 *.pyc
 __pycache__/
+# Experiment results
+results/
