@@ -44,6 +44,11 @@ class QwenPolicy(ActionPolicy):
         """Return the configured model identifier."""
         return self._config.model_id
 
+    @property
+    def action_selection_mode(self) -> str:
+        """Return the configured action-selection interface."""
+        return self._config.action_selection_mode
+
     def act(self, request: ActionRequest) -> ActionDecision:
         """Generate, parse, and record one action without environment side effects."""
         tokenizer, model, torch = self._load()

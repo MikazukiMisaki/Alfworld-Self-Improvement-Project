@@ -66,6 +66,17 @@ class IndexedActionSelectionTests(unittest.TestCase):
         self.assertEqual(action_id_mapping(self.actions), expected)
         self.assertEqual(action_id_mapping(self.actions), expected)
 
+    def test_duplicate_actions_keep_distinct_ordered_ids(self) -> None:
+        actions = ("look", "inventory", "look")
+        mapping = action_id_mapping(actions)
+        self.assertEqual(
+            mapping,
+            {"A000": "look", "A001": "inventory", "A002": "look"},
+        )
+        parsed = parse_action_id("Action-ID: A002", actions)
+        self.assertEqual(parsed.selected_index, 2)
+        self.assertEqual(parsed.action, "look")
+
     def test_indexed_decision_logs_auditable_mapping(self) -> None:
         policy = QwenPolicy(
             QwenPolicyConfig(

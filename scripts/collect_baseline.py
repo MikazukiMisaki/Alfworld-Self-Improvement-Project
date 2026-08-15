@@ -22,6 +22,7 @@ from evaluation.evaluator import evaluate
 from models.policy import GenerationOptions
 from models.qwen import QwenPolicy, QwenPolicyConfig
 from trajectory.store import JsonlTrajectoryStore
+from trajectory.provenance import pipeline_for_action_selection_mode
 from trajectory.trajectory import RunManifest
 
 
@@ -39,6 +40,14 @@ def main() -> None:
     model_config = _read_yaml(_resolve(project_root, collection_config["model_config"]))
     environment = _environment(environment_config, project_root)
     policy = _policy(model_config)
+    action_selection_mode = policy.action_selection_mode
+    pipeline_version = str(model_config.get("pipeline_version", ""))
+    expected_pipeline = pipeline_for_action_selection_mode(action_selection_mode)
+    if pipeline_version != expected_pipeline:
+        raise ValueError(
+            "model pipeline_version must match action_selection.mode: "
+            f"expected {expected_pipeline!r}, got {pipeline_version!r}"
+        )
     episodes = int(collection_config["episodes"])
     seed_start = int(collection_config["seed_start"])
     seeds = tuple(seed_start + index for index in range(episodes))
@@ -55,6 +64,9 @@ def main() -> None:
         },
         seed_schedule=seeds,
         git_revision=_git_revision(project_root),
+        pipeline_version=pipeline_version,
+        action_selection_mode=action_selection_mode,
+        split=environment.split,
     )
     _write_json(run_directory / "run_manifest.json", manifest.to_dict())
 

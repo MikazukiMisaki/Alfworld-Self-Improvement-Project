@@ -1,0 +1,539 @@
+{
+  "audit_scope": "results",
+  "classification_policy": "Content evidence from manifests, resolved configs, trajectories, and metrics takes precedence over directory names. Missing evidence remains unknown.",
+  "duplicate_trajectory_groups": [],
+  "environment_verification": "Historical manifests lack a complete package, dataset, and hardware fingerprint; their original runtime environment is therefore not verified.",
+  "runs": [
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "metrics.json": "d38687c407d8724d31a6fb0551a60f3c0b6a294322a4258d5857eb6688bdc960",
+        "run_manifest.json": "f5d7e40355b90163f991bbb7e298982fd89a9f89e707df94eedb6938dd2561bd",
+        "trajectory.jsonl": "7618d6282f0d0a777702b89c5d2ce4de7d94fd03647a6cba767e8ee5d182419d"
+      },
+      "artifact_location": "results/baseline/20260809T112835Z",
+      "artifact_type": "historical_run",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "trajectory outputs are not Action-ID selections"
+      ],
+      "created_at": "2026-08-09T11:28:35.047932+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "58c8c325e069cd45fce95b90069504ecde63349b",
+      "model": "Qwen/Qwen3-8B",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "20260809T112835Z",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": 0.0,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "run_manifest.json": "53ba7932d3f95590dd15e5a9b7574c5f7d1d1def2207433e3f32eae5692e5643"
+      },
+      "artifact_location": "results/baseline/smoke-a40",
+      "artifact_type": "smoke_test",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "incomplete one-run artifact set"
+      ],
+      "created_at": "2026-07-31T07:43:05.430440+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "00b003b90f510146aa256fd88b6fd5b9dd07daf5",
+      "model": "Qwen/Qwen3-8B-Instruct",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "missing metrics.json",
+        "missing trajectory.jsonl",
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "smoke-a40",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": null,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "run_manifest.json": "ec589c740cfd4e354c4389542e0b2d46294adbcf05000601aeb315c4cbf01a76"
+      },
+      "artifact_location": "results/baseline/smoke-a40-001",
+      "artifact_type": "smoke_test",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "incomplete one-run artifact set"
+      ],
+      "created_at": "2026-07-31T07:51:40.167917+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "00b003b90f510146aa256fd88b6fd5b9dd07daf5",
+      "model": "Qwen/Qwen3-8B-Instruct",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "missing metrics.json",
+        "missing trajectory.jsonl",
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "smoke-a40-001",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": null,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "run_manifest.json": "374c9632ea3ddcb6fab64019dcedb01e9a9d339d0ccbbaa7e7fe9213b50b21d4"
+      },
+      "artifact_location": "results/baseline/smoke-a40-002",
+      "artifact_type": "smoke_test",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "incomplete one-run artifact set"
+      ],
+      "created_at": "2026-07-31T07:55:58.191854+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "00b003b90f510146aa256fd88b6fd5b9dd07daf5",
+      "model": "Qwen/Qwen3-8B-Instruct",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "missing metrics.json",
+        "missing trajectory.jsonl",
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "smoke-a40-002",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": null,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "run_manifest.json": "280bc64e09371c875fdf79dd55dbe24b6fb2c7e4bb1c663aaba6222c85358927"
+      },
+      "artifact_location": "results/baseline/smoke-a40-003",
+      "artifact_type": "smoke_test",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "incomplete one-run artifact set"
+      ],
+      "created_at": "2026-07-31T08:02:36.405498+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "e70a46506f2508fb6f1870020723d0007cb8cfbc",
+      "model": "Qwen/Qwen3-8B-Instruct",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "missing metrics.json",
+        "missing trajectory.jsonl",
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "smoke-a40-003",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": null,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "metrics.json": "a201ab2d930c4e8076d8247c1e49a88ac6cf0dacc122ca8390e647ee53f33140",
+        "run_manifest.json": "2d385d6bb555d0758938295ad83d1baddf31f20cd0819bca8cb39706e68e00d8",
+        "trajectory.jsonl": "cb8fa4a3b1b2590c37b1a056e26d2e59ccaf361b39511782db2390b8c735051b"
+      },
+      "artifact_location": "results/baseline/smoke-a40-004",
+      "artifact_type": "smoke_test",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "trajectory outputs are not Action-ID selections",
+        "one configured episode plus smoke run metadata"
+      ],
+      "created_at": "2026-07-31T08:09:57.110184+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "e70a46506f2508fb6f1870020723d0007cb8cfbc",
+      "model": "Qwen/Qwen3-8B",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "smoke-a40-004",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": 0.0,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "metrics.json": "a201ab2d930c4e8076d8247c1e49a88ac6cf0dacc122ca8390e647ee53f33140",
+        "run_manifest.json": "b5c376a523463ad493798c8f903e4bc8fbd5532ac9ae1337e6d80b9e0c3ae35b",
+        "trajectory.jsonl": "4938e7db2688e1da09e297b80fd3122a22f83696be338bcb57dac6b3369a98e5"
+      },
+      "artifact_location": "results/baseline/smoke-a40-005",
+      "artifact_type": "smoke_test",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "trajectory outputs are not Action-ID selections",
+        "one configured episode plus smoke run metadata"
+      ],
+      "created_at": "2026-07-31T08:38:36.601614+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "e1d364c195b7fcf783b3742fb2c1ef78ffecbcc3",
+      "model": "Qwen/Qwen3-8B",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "smoke-a40-005",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": 0.0,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "metrics.json": "92905b541de67de4f7293c73b72ecfb4ac32d822eaa048713931bfb7e2c79988",
+        "run_manifest.json": "0db99ee7635e8b6ae4c72a3930ed69a6f6ca7c4b0f1100f11eb06ea832bdc2bd",
+        "trajectory.jsonl": "e48945eb5539d8661ad4cdd59113c40a640969582a658b33031a27be510d10df"
+      },
+      "artifact_location": "results/baseline/smoke-a40-006",
+      "artifact_type": "smoke_test",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "trajectory outputs are not Action-ID selections",
+        "one configured episode plus smoke run metadata"
+      ],
+      "created_at": "2026-07-31T09:20:38.224371+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "c4a3031b961110eccc33776c201f7455d770ba76",
+      "model": "Qwen/Qwen3-8B",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "smoke-a40-006",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": 0.0,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "run_manifest.json": "b472b0c001836afc2a22afbdf710a346411e36926833a7ef69d75d014b88676c"
+      },
+      "artifact_location": "results/baseline/smoke-a40-010",
+      "artifact_type": "smoke_test",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "incomplete one-run artifact set"
+      ],
+      "created_at": "2026-08-04T06:13:22.689023+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "87c135f6ad7f95bbcef747aa2ed10f1eb59743a1",
+      "model": "Qwen/Qwen3-8B",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "missing metrics.json",
+        "missing trajectory.jsonl",
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "smoke-a40-010",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": null,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "metrics.json": "65febb8b8045f7ef345ec7ad6998340020aa0c14bdd6892ae41aa4732fa08a31",
+        "run_manifest.json": "6ec3421538f714930ddb2ccc962cd65ab2d6772dcbb09a447f383eae33c50486",
+        "trajectory.jsonl": "0dab88abb6d1d400d055c7f39ef944c0500d2360e050545e9c687cfbfbd81f47"
+      },
+      "artifact_location": "results/baseline/smoke-a40-011",
+      "artifact_type": "smoke_test",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "trajectory outputs are not Action-ID selections",
+        "one configured episode plus smoke run metadata"
+      ],
+      "created_at": "2026-08-04T06:21:20.589121+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "87c135f6ad7f95bbcef747aa2ed10f1eb59743a1",
+      "model": "Qwen/Qwen3-8B",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "smoke-a40-011",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": 0.0,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "metrics.json": "d38687c407d8724d31a6fb0551a60f3c0b6a294322a4258d5857eb6688bdc960",
+        "run_manifest.json": "15b7e57e0732d14797bc80a918612c23536e8ae53f9079d30074dc9b796c8dba",
+        "trajectory.jsonl": "eb1e0111987aad0ef5f0a50e8c2f413460e4de57db2bfc84bce6ac76fa4aa146"
+      },
+      "artifact_location": "results/baseline/sprint1-5-acc28b43e0d2-20260809T114656Z",
+      "artifact_type": "historical_run",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "trajectory outputs are not Action-ID selections"
+      ],
+      "created_at": "2026-08-09T11:46:56.454364+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "643a959be326a57196a9bbfcb9d4577d4f1303b9",
+      "model": "Qwen/Qwen3-8B",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "sprint1-5-acc28b43e0d2-20260809T114656Z",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": 0.0,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "indexed_admissible",
+      "artifact_hashes": {
+        "metrics.json": "7bdf64b9c64936d0e0ddb5d637dca0b535ec4e62f0a2e518af74af7c8f6a9a59",
+        "run_manifest.json": "08370d7c26707bf0e65df8abc14baf42ac544a624bc4422561b544a21b257672",
+        "trajectory.jsonl": "c75a5e3e49792e6640bbca996d55376d19cc80b9dbd6b86bc0f6490dcf37db6c"
+      },
+      "artifact_location": "results/baseline/sprint1-5-acc28b43e0d2-20260813T162958Z",
+      "artifact_type": "historical_run",
+      "classification_confidence": "high",
+      "classification_evidence": [
+        "resolved indexed_admissible mode",
+        "indexed trajectory protocol evidence"
+      ],
+      "created_at": "2026-08-13T16:29:58.457471+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "e2f27dc768ff68eed9cdca76d526d2c437df33a1",
+      "model": "Qwen/Qwen3-8B",
+      "model_config_path": "configs/model/qwen3_8b_indexed.yaml",
+      "notes": [
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "indexed_v1",
+      "run_id": "sprint1-5-acc28b43e0d2-20260813T162958Z",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": 0.0,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "indexed_admissible",
+      "artifact_hashes": {
+        "metrics.json": "c5f2858d60d2623cd6fe9f9a4eb7e7d3090bc7502074156968af55b80ac82206",
+        "run_manifest.json": "197545810ed1faa499a966c840820a5a8e3bb3e08565c77b87d51bd93882913a",
+        "trajectory.jsonl": "cf9ab1484544da16ba2d7f2f2855bac083aa3e34f45840e4c8f3b65fad176b02"
+      },
+      "artifact_location": "results/baseline/sprint1-5-b1-diagnostic-20260813T163453Z",
+      "artifact_type": "diagnostic",
+      "classification_confidence": "high",
+      "classification_evidence": [
+        "resolved indexed_admissible mode",
+        "indexed trajectory protocol evidence",
+        "multi-episode artifact plus diagnostic run metadata"
+      ],
+      "created_at": "2026-08-13T16:34:53.665425+00:00",
+      "environment_provenance": "partial",
+      "episodes": 3,
+      "git_revision": "e2f27dc768ff68eed9cdca76d526d2c437df33a1",
+      "model": "Qwen/Qwen3-8B",
+      "model_config_path": "configs/model/qwen3_8b_indexed.yaml",
+      "notes": [
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "indexed_v1",
+      "run_id": "sprint1-5-b1-diagnostic-20260813T163453Z",
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "split": "valid_seen",
+      "success_rate": 0.0,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "metrics.json": "d38687c407d8724d31a6fb0551a60f3c0b6a294322a4258d5857eb6688bdc960",
+        "run_manifest.json": "bc8c845ec87d756d77c9d8cb73318448a1edcebab0fa4a32a3e75cdbb6e085b6",
+        "trajectory.jsonl": "5f4dd43dea919be4e4c69f6c24c3ae7aad7043bef3e6da359ea2a92b38642d15"
+      },
+      "artifact_location": "results/baseline/sprint1-5-sdxsrv03-20260809T112117Z",
+      "artifact_type": "historical_run",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "trajectory outputs are not Action-ID selections"
+      ],
+      "created_at": "2026-08-09T11:21:36.897594+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "58c8c325e069cd45fce95b90069504ecde63349b",
+      "model": "Qwen/Qwen3-8B",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "sprint1-5-sdxsrv03-20260809T112117Z",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": 0.0,
+      "successful_trajectories": 0
+    },
+    {
+      "action_selection_mode": "free_form_validated",
+      "artifact_hashes": {
+        "metrics.json": "d38687c407d8724d31a6fb0551a60f3c0b6a294322a4258d5857eb6688bdc960",
+        "run_manifest.json": "d26dd15342d84268ce6e4f90dcc85f9853c0b18c748e50d8cc8af6abb146fbd0",
+        "trajectory.jsonl": "1e829dcd2bb7a31ee98728fe1b8eee766fcd884dbd13fc3a9cdad3dac9a2ede5"
+      },
+      "artifact_location": "results/baseline/sprint1-5-sdxsrv03-20260809T112909Z",
+      "artifact_type": "historical_run",
+      "classification_confidence": "medium",
+      "classification_evidence": [
+        "canonical Sprint 1 manifest and free-form model configuration",
+        "trajectory outputs are not Action-ID selections"
+      ],
+      "created_at": "2026-08-09T11:29:16.922233+00:00",
+      "environment_provenance": "partial",
+      "episodes": 1,
+      "git_revision": "58c8c325e069cd45fce95b90069504ecde63349b",
+      "model": "Qwen/Qwen3-8B",
+      "model_config_path": "configs/model/qwen3_8b.yaml",
+      "notes": [
+        "historical manifest lacks explicit pipeline_version",
+        "historical manifest lacks explicit action_selection_mode",
+        "original runtime environment not fully verifiable from manifest"
+      ],
+      "pipeline_version": "free_form_v1",
+      "run_id": "sprint1-5-sdxsrv03-20260809T112909Z",
+      "seeds": [
+        42
+      ],
+      "split": "valid_seen",
+      "success_rate": 0.0,
+      "successful_trajectories": 0
+    }
+  ],
+  "schema_version": 1,
+  "summary": {
+    "artifact_type_counts": {
+      "diagnostic": 1,
+      "historical_run": 5,
+      "smoke_test": 9
+    },
+    "pipeline_counts": {
+      "free_form_v1": 13,
+      "indexed_v1": 2
+    },
+    "run_count": 15,
+    "verified_successful_legacy_cases": 0
+  }
+}

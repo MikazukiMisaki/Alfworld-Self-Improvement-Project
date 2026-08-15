@@ -1,0 +1,8 @@
+schema_version: 1
+source_pipeline: legacy_v1
+cases: []
+status: unavailable
+notes:
+  - No successful legacy trajectory is present in this checkout or audited server workspace.
+  - Planning documents report 210 legacy episodes and 28 successes, but aggregate claims are not reproducible case evidence.
+  - Populate only from immutable source trajectories with verified task ID, split, seed, and source hash.

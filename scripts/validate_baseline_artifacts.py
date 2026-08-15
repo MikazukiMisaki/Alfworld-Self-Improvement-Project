@@ -29,6 +29,7 @@ class BaselineSmokeSummary:
 
     run_id: str
     git_revision: str | None
+    pipeline_version: str
     action_selection_mode: str
     task_id: str
     termination_reason: str
@@ -113,6 +114,29 @@ def validate_baseline_artifacts(
         raise ArtifactValidationError(
             f"unsupported action selection mode: {action_selection_mode!r}"
         )
+    pipeline_version = _required_string(manifest, "pipeline_version", "run manifest")
+    top_level_mode = _required_string(
+        manifest, "action_selection_mode", "run manifest"
+    )
+    top_level_split = _required_string(manifest, "split", "run manifest")
+    expected_pipeline = {
+        "free_form_validated": "free_form_v1",
+        "indexed_admissible": "indexed_v1",
+    }[action_selection_mode]
+    if top_level_mode != action_selection_mode:
+        raise ArtifactValidationError(
+            "top-level action selection mode does not match resolved config"
+        )
+    if pipeline_version != expected_pipeline:
+        raise ArtifactValidationError(
+            "pipeline_version does not match action selection mode"
+        )
+    if model_config.get("pipeline_version") != pipeline_version:
+        raise ArtifactValidationError(
+            "resolved model pipeline_version does not match manifest"
+        )
+    if top_level_split != environment_config.get("split"):
+        raise ArtifactValidationError("top-level split does not match resolved config")
 
     if collection_config.get("episodes") != 1:
         raise ArtifactValidationError("resolved collection config must contain episodes=1")
@@ -257,6 +281,7 @@ def validate_baseline_artifacts(
     return BaselineSmokeSummary(
         run_id=run_id,
         git_revision=git_revision,
+        pipeline_version=pipeline_version,
         action_selection_mode=action_selection_mode,
         task_id=task_id,
         termination_reason=termination_reason,
@@ -275,6 +300,7 @@ def print_summary(summary: BaselineSmokeSummary) -> None:
     """Print the approved concise smoke-test summary."""
     print(f"run_id: {summary.run_id}")
     print(f"git_revision: {summary.git_revision}")
+    print(f"pipeline_version: {summary.pipeline_version}")
     print(f"action_selection_mode: {summary.action_selection_mode}")
     print(f"task_id: {summary.task_id}")
     print(f"termination_reason: {summary.termination_reason}")

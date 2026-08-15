@@ -21,6 +21,9 @@ Out of scope: selector, reflection, memory, intervention, DPO, PPO, and GRPO.
     configs/     baseline configuration
     scripts/     runnable collection entry points
     legacy/      reserved immutable legacy artifacts
+    results/     immutable historical result archive
+    artifacts/   ignored runtime experiment output
+    reports/     provenance and readiness audits
 
 ## Run a baseline
 
@@ -30,11 +33,29 @@ Install the ALFWorld, PyTorch, Transformers, and PyYAML runtimes. Then set:
     export ALFWORLD_DATA=/absolute/path/to/alfworld_data
     python scripts/collect_baseline.py
 
-The script creates a unique results/baseline directory containing:
+The script creates a unique ignored `artifacts/runtime/baseline` directory containing:
 
 - trajectory.jsonl
 - metrics.json
 - run_manifest.json
+
+Every new manifest records explicit `pipeline_version`,
+`action_selection_mode`, and `split` fields. Historical `results/` are not
+implicit experiment or training inputs.
+
+## Action-interface regression
+
+Check that the portable B0/B1 configs differ only by action interface:
+
+    python scripts/run_action_interface_regression.py check-configs
+
+After activating the university runtime, a bounded matched comparison can be
+run explicitly with:
+
+    python scripts/run_action_interface_regression.py run --episodes 1 --run-name manual-check
+
+The harness rejects task/seed mismatches and writes structured and Markdown
+step comparisons under ignored `artifacts/runtime/regression/`.
 
 ## Tests
 

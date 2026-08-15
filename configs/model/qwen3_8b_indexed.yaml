@@ -4,6 +4,7 @@ dtype: bfloat16
 trust_remote_code: false
 # B1 maps one strict ephemeral ID back to the exact environment-owned action.
 enable_thinking: false
+pipeline_version: indexed_v1
 action_selection:
   mode: indexed_admissible
 generation:

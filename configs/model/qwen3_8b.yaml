@@ -5,6 +5,7 @@ trust_remote_code: false
 # ALFWorld is text-only and requires a command at every step. Disable Qwen3's
 # default reasoning block so the output budget is used for the command.
 enable_thinking: false
+pipeline_version: free_form_v1
 action_selection:
   mode: free_form_validated
 generation:

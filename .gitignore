@@ -1,5 +1,8 @@
 # Machine-specific runtime configuration and credentials
 configs/local/
+artifacts/runtime/
+results/*
+!results/README.md
 .env
 .env.*
 !.env.example
