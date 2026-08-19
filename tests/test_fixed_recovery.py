@@ -31,6 +31,12 @@ def test_recovery_prompt_is_bounded_and_uses_observable_diagnostics() -> None:
     assert "Adjacent repeated actions: 3" in prompt
     assert "[A000] go to microwave 1" in prompt
     assert "reward" not in prompt.casefold()
+    assert "one immediate diagnosis only" in prompt
+    assert "at most 12 words" in prompt
+    assert "selected action must directly address the diagnosis" in prompt
+    assert "Choose exactly one currently available Action-ID" in prompt
+    assert "Output exactly two lines" in prompt
+    assert "Diagnosis: <maximum 12 words>" in prompt
 
 
 def test_recovery_output_maps_one_exact_action_id() -> None:
@@ -43,6 +49,9 @@ def test_recovery_output_maps_one_exact_action_id() -> None:
     assert decision.diagnosis == "The recent action repeats without progress."
     assert decision.action_id == "A001"
     assert decision.action == "go to microwave 1"
+    assert decision.diagnosis_word_count == 6
+    assert decision.diagnosis_length_valid is True
+    assert decision.output_complete is True
 
 
 def test_recovery_output_fails_closed_without_repair() -> None:
@@ -57,6 +66,29 @@ def test_recovery_output_fails_closed_without_repair() -> None:
     assert malformed.status == "malformed_recovery" and malformed.action == ""
     assert ambiguous.status == "malformed_recovery" and ambiguous.action == ""
     assert out_of_range.status == "out_of_range_id" and out_of_range.action == ""
+
+
+def test_recovery_output_rejects_long_or_truncated_diagnosis() -> None:
+    long_output = (
+        "Diagnosis: one two three four five six seven eight nine ten eleven twelve "
+        "thirteen\nAction-ID: A000"
+    )
+    too_long = parse_recovery_output(long_output, ("look",))
+    truncated = parse_recovery_output(
+        "Diagnosis: Cooling is still required.\nAction-ID: A000",
+        ("look",),
+        output_complete=False,
+        token_cap_reached=True,
+    )
+
+    assert too_long.status == "diagnosis_too_long"
+    assert too_long.diagnosis_word_count == 13
+    assert too_long.diagnosis_length_valid is False
+    assert too_long.action == ""
+    assert truncated.status == "truncated_recovery"
+    assert truncated.output_complete is False
+    assert truncated.token_cap_reached is True
+    assert truncated.action == ""
 
 
 def test_loop_indicators_count_adjacent_and_abab_events() -> None:

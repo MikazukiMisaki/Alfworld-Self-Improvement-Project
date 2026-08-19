@@ -34,8 +34,8 @@ from trajectory.provenance import (  # noqa: E402
 )
 
 
-DEFAULT_CONFIG = (
-    PROJECT_ROOT / "configs/experiments/sprint2b_fixed_recovery_pilot.json"
+DEFAULT_CONFIG = PROJECT_ROOT / (
+    "configs/experiments/sprint2b_revised_recovery_development.json"
 )
 
 
@@ -57,6 +57,11 @@ def main() -> int:
     _require_hash(schedule_path, source["schedule_sha256"])
     _require_hash(run_path / "trajectory.jsonl", source["trajectory_sha256"])
     _require_hash(analysis_path, source["analysis_sha256"])
+    if source.get("old_operator_report"):
+        _require_hash(
+            PROJECT_ROOT / source["old_operator_report"],
+            source["old_operator_report_sha256"],
+        )
     schedule = _read_object(schedule_path)
     analysis = _read_object(analysis_path)
     manifest, trajectories = load_run_trajectories(
@@ -238,6 +243,14 @@ def main() -> int:
                 "generated_tokens": recovery_decision.token_statistics.generated_tokens,
                 "input_tokens": recovery_decision.token_statistics.input_tokens,
                 "latency_seconds": recovery_decision.latency_seconds,
+                "diagnosis_word_count": recovery_decision.diagnosis_word_count,
+                "diagnosis_length_valid": recovery_decision.diagnosis_length_valid,
+                "output_complete": recovery_decision.output_complete,
+                "token_cap_reached": recovery_decision.token_cap_reached,
+                "diagnosis_action_consistency": {
+                    "annotation": None,
+                    "used_as_execution_rule": False,
+                },
                 "prompt": recovery_decision.prompt,
             },
             "continue": continue_branch,
@@ -306,6 +319,25 @@ def _validate_frozen_configuration(
         raise RuntimeError("formal run does not use the frozen H4 model configuration")
     if manifest["git_revision"] != pilot_config["source"]["baseline_git_revision"]:
         raise RuntimeError("formal run baseline revision does not match pilot config")
+    recovery = pilot_config["recovery"]
+    if recovery != {
+        "operator_version": RECOVERY_OPERATOR_VERSION,
+        "prompt_version": RECOVERY_PROMPT_VERSION,
+        "model_id": "Qwen/Qwen3-8B",
+        "max_calls_per_recover_branch": 1,
+        "enable_thinking": False,
+        "do_sample": False,
+        "max_new_tokens": 32,
+        "maximum_diagnosis_words": 12,
+        "retry_on_failure": False,
+        "fallback_or_repair": False,
+    }:
+        raise RuntimeError("pilot config does not match the revised recovery operator")
+    if (
+        pilot_config.get("development_prefixes") is not True
+        or pilot_config.get("eligible_as_held_out_evidence") is not False
+    ):
+        raise RuntimeError("reused recovery prefixes must be marked development-only")
 
 
 def _validate_prefixes(
@@ -363,6 +395,21 @@ def _aggregate(pairs: list[dict[str, Any]]) -> dict[str, Any]:
         "total_recovery_latency_seconds": sum(latencies),
         "selection_failure_count": sum(
             pair["recovery"]["status"] != "selected" for pair in pairs
+        ),
+        "malformed_output_count": sum(
+            pair["recovery"]["status"]
+            in {"malformed_recovery", "truncated_recovery"}
+            for pair in pairs
+        ),
+        "complete_output_count": sum(
+            pair["recovery"]["output_complete"] for pair in pairs
+        ),
+        "diagnosis_length_valid_count": sum(
+            pair["recovery"]["diagnosis_length_valid"] for pair in pairs
+        ),
+        "repeated_continuation_action_count": sum(
+            pair["recovery"]["mapped_command"] == pair["continue_first_action"]
+            for pair in pairs
         ),
         "value_is_heterogeneous": len({pair["classification"] for pair in pairs}) > 1,
     }

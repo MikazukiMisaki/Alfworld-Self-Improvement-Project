@@ -12,18 +12,20 @@ from models.policy import ActionDecision, ActionRequest, TokenStatistics
 from models.qwen import QwenPolicy
 
 
-RECOVERY_OPERATOR_VERSION = "fixed_one_shot_recovery_v1"
-RECOVERY_PROMPT_VERSION = "fixed-recovery-diagnosis-action-id-v1"
+RECOVERY_OPERATOR_VERSION = "fixed_one_shot_recovery_v2"
+RECOVERY_PROMPT_VERSION = "fixed-recovery-diagnosis-action-id-v2"
 RECOVERY_INSTRUCTIONS = (
     "You are making one bounded recovery intervention for an ALFWorld household "
-    "agent. Diagnose only the immediate observable reason recent behavior is not "
-    "advancing the task, then select one admissible action that best restores "
-    "task progress.\n"
+    "agent.\n"
+    "1. Give one immediate diagnosis only.\n"
+    "2. The diagnosis must contain at most 12 words.\n"
+    "3. The selected action must directly address the diagnosis.\n"
+    "4. Choose exactly one currently available Action-ID.\n"
+    "5. Output exactly two lines.\n"
     "Return exactly two lines in this format:\n"
-    "Diagnosis: <one concise diagnosis>\n"
+    "Diagnosis: <maximum 12 words>\n"
     "Action-ID: Axyz\n"
-    "Choose one ID exactly as written below. Do not output reasoning, commands, "
-    "extra lines, or <think> tags."
+    "Do not output reasoning, commands, extra lines, or <think> tags."
 )
 _RECOVERY_OUTPUT = re.compile(
     r"\ADiagnosis: ([^\r\n]+)\r?\nAction-ID: (A\d{3})\Z"
@@ -45,6 +47,10 @@ class RecoveryDecision:
     token_statistics: TokenStatistics
     latency_seconds: float
     id_to_command: dict[str, str]
+    diagnosis_word_count: int | None
+    diagnosis_length_valid: bool
+    output_complete: bool
+    token_cap_reached: bool
 
     def as_action_decision(self, model_version: str) -> ActionDecision:
         """Adapt the recovery selection to the standard environment decision."""
@@ -61,6 +67,16 @@ class RecoveryDecision:
                 "prompt_version": RECOVERY_PROMPT_VERSION,
                 "recovery_operator_version": RECOVERY_OPERATOR_VERSION,
                 "recovery_diagnosis": self.diagnosis,
+                "recovery_output_validation": {
+                    "diagnosis_word_count": self.diagnosis_word_count,
+                    "diagnosis_length_valid": self.diagnosis_length_valid,
+                    "output_complete": self.output_complete,
+                    "token_cap_reached": self.token_cap_reached,
+                    "diagnosis_action_consistency": {
+                        "annotation": None,
+                        "used_as_execution_rule": False,
+                    },
+                },
                 "action_selection_mode": "indexed_admissible",
                 "action_selection": {
                     "action_selection_mode": "indexed_admissible",
@@ -121,6 +137,16 @@ class FixedRecoveryOperator:
         latency = time.perf_counter() - started
         input_tokens = inputs["input_ids"].shape[1]
         generated_tokens = generated.sequences[0][input_tokens:]
+        eos_token_ids = tokenizer.eos_token_id
+        if isinstance(eos_token_ids, int):
+            eos_token_ids = [eos_token_ids]
+        eos_token_ids = set(eos_token_ids or [])
+        ended_with_eos = bool(
+            len(generated_tokens)
+            and int(generated_tokens[-1].item()) in eos_token_ids
+        )
+        token_cap_reached = len(generated.scores or ()) >= 32
+        output_complete = not token_cap_reached or ended_with_eos
         raw_output = tokenizer.decode(
             generated_tokens, skip_special_tokens=True
         ).strip()
@@ -132,6 +158,8 @@ class FixedRecoveryOperator:
                 generated, torch, input_tokens=input_tokens
             ),
             latency_seconds=latency,
+            output_complete=output_complete,
+            token_cap_reached=token_cap_reached,
         )
 
 
@@ -182,25 +210,56 @@ def parse_recovery_output(
     prompt: str = "",
     token_statistics: TokenStatistics | None = None,
     latency_seconds: float = 0.0,
+    output_complete: bool = True,
+    token_cap_reached: bool = False,
 ) -> RecoveryDecision:
-    """Parse exactly two recovery lines and map one action ID fail-closed."""
+    """Validate the complete two-line contract and map one ID fail-closed."""
     mapping = action_id_mapping(valid_actions or ())
-    match = _RECOVERY_OUTPUT.fullmatch(output.strip())
+    stripped = output.strip()
+    match = _RECOVERY_OUTPUT.fullmatch(stripped)
     embedded_ids = _ACTION_ID_ANYWHERE.findall(output)
+    diagnosis = _diagnosis_candidate(stripped)
+    word_count = len(diagnosis.split()) if diagnosis else None
+    length_valid = word_count is not None and word_count <= 12
+    common = {
+        "raw_output": output,
+        "prompt": prompt,
+        "token_statistics": token_statistics or TokenStatistics(0),
+        "latency_seconds": latency_seconds,
+        "id_to_command": mapping,
+        "diagnosis_word_count": word_count,
+        "diagnosis_length_valid": length_valid,
+        "output_complete": output_complete,
+        "token_cap_reached": token_cap_reached,
+    }
+    if not output_complete:
+        return RecoveryDecision(
+            diagnosis,
+            None,
+            "",
+            "truncated_recovery",
+            "generation did not complete before the token limit",
+            **common,
+        )
     if match is None or len(embedded_ids) != 1:
         return RecoveryDecision(
-            None,
+            diagnosis,
             None,
             "",
             "malformed_recovery",
             "expected exactly one diagnosis line and one action-ID line",
-            output,
-            prompt,
-            token_statistics or TokenStatistics(0),
-            latency_seconds,
-            mapping,
+            **common,
         )
     diagnosis, action_id = match.groups()
+    if not length_valid:
+        return RecoveryDecision(
+            diagnosis.strip(),
+            action_id,
+            "",
+            "diagnosis_too_long",
+            "diagnosis exceeds 12 words",
+            **common,
+        )
     parsed = parse_action_id(f"Action-ID: {action_id}", valid_actions)
     return RecoveryDecision(
         diagnosis.strip(),
@@ -208,12 +267,16 @@ def parse_recovery_output(
         parsed.action,
         parsed.status,
         parsed.invalid_reason,
-        output,
-        prompt,
-        token_statistics or TokenStatistics(0),
-        latency_seconds,
-        mapping,
+        **common,
     )
+
+
+def _diagnosis_candidate(output: str) -> str | None:
+    lines = output.splitlines()
+    if not lines or not lines[0].startswith("Diagnosis: "):
+        return None
+    candidate = lines[0].removeprefix("Diagnosis: ").strip()
+    return candidate or None
 
 
 def loop_indicators(actions: list[str]) -> dict[str, int | bool]:
