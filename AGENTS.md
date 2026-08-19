@@ -11,19 +11,19 @@ Before changing code, read:
 - reports/SPRINT_1_5_FINAL.md
 
 Current milestone:
-Sprint 2A — deterministic prefix replay/reconstruction validation.
+Sprint 2B — fixed one-shot recovery pilot.
 
 Sprint 1.5 is complete. The frozen baseline is
 `indexed_bounded_context_v1` at the revision and configuration recorded in
 `reports/SPRINT_1_5_FINAL.md`.
 
-Do not tune or modify the frozen baseline unless Sprint 2A replay validation
-reveals a genuine implementation defect. Sprint 2A is infrastructure-only:
-validate reconstruction before implementing any recovery behavior.
+Sprint 2A deterministic replay passed. Do not tune or modify the frozen
+baseline. Sprint 2B permits exactly one fixed recovery call at each frozen
+pilot prefix, followed by the unchanged H4 policy.
 
 Do not add:
-- recovery or reflection behavior before replay passes
 - recovery selector logic
+- multi-round recovery or reflection
 - DPO
 - memory
 - PPO/GRPO
