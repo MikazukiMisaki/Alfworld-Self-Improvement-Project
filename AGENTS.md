@@ -5,21 +5,29 @@ This repository is a master's research project.
 Before changing code, read:
 
 - PROJECT.md
-- docs/PAPER_PROPOSAL.md
-- docs/EXPERIMENT_PLAN.md
-- docs/IMPLEMENTATION_PHASES.md
+- PAPER_PROPOSAL.md
+- EXPERIMENT_PLAN.md
+- IMPLEMENTATION_PHASES.md
+- reports/SPRINT_1_5_FINAL.md
 
 Current milestone:
-Sprint 1.5 — baseline debugging and validation.
+Sprint 2A — deterministic prefix replay/reconstruction validation.
 
-Do not implement Sprint 2 until the baseline exit criteria are satisfied.
+Sprint 1.5 is complete. The frozen baseline is
+`indexed_bounded_context_v1` at the revision and configuration recorded in
+`reports/SPRINT_1_5_FINAL.md`.
+
+Do not tune or modify the frozen baseline unless Sprint 2A replay validation
+reveals a genuine implementation defect. Sprint 2A is infrastructure-only:
+validate reconstruction before implementing any recovery behavior.
 
 Do not add:
+- recovery or reflection behavior before replay passes
+- recovery selector logic
 - DPO
 - memory
 - PPO/GRPO
 - additional environments
-- selector logic
 
 Machine-specific paths and credentials must never be committed.
 

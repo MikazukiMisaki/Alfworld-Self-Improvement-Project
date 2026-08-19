@@ -3,11 +3,19 @@
 Minimal reproducible baseline infrastructure for the thesis project
 “Recovery-Aware Intervention Selection for Small Language Agents.”
 
-## Sprint 1 scope
+## Project status
 
-ALFWorld → Qwen3-8B → trajectory collection → evaluation → JSONL export.
+Sprint 1.5 is complete. The frozen baseline is
+`indexed_bounded_context_v1`, using indexed admissible actions and bounded
+goal-preserving recent-state context with `k=4`.
 
-Out of scope: selector, reflection, memory, intervention, DPO, PPO, and GRPO.
+The current milestone is Sprint 2A deterministic prefix replay validation.
+Baseline tuning is prohibited unless replay reveals a genuine implementation
+defect. Recovery, reflection, selectors, memory, DPO, PPO, and GRPO remain out
+of scope.
+
+See `reports/SPRINT_1_5_FINAL.md` for the frozen configuration and formal
+30-episode result.
 
 ## Repository layout
 
@@ -56,6 +64,10 @@ run explicitly with:
 
 The harness rejects task/seed mismatches and writes structured and Markdown
 step comparisons under ignored `artifacts/runtime/regression/`.
+
+The frozen H4 portable configuration is
+`configs/collection/baseline_indexed_h4.yaml`. Its runtime outputs belong under
+ignored `artifacts/runtime/`; full trajectories are not committed.
 
 ## Tests
 

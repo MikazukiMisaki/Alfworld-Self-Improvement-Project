@@ -6,7 +6,26 @@ Implement only what is necessary to answer the paper question: whether a selecto
 
 Do not implement DPO, memory retrieval, PPO/GRPO, additional environments, vector search, planners, or counterfactual credit assignment beyond the paired branch protocol.
 
+## Current status
+
+Sprint 1.5 / Phase 1 is complete. The frozen baseline is
+`indexed_bounded_context_v1` with bounded context `k=4`; see
+`reports/SPRINT_1_5_FINAL.md`.
+
+The active milestone is Sprint 2A: determine whether an exact trajectory prefix
+can be reconstructed by deterministic reset and action replay, or whether clean
+snapshot/restore support is required. Do not implement recovery, reflection,
+branch generation, or selector logic until replay validity is established. Do
+not retune the baseline unless this audit reveals a genuine implementation
+defect.
+
+DPO, memory, PPO/GRPO, broad credit assignment, and learned selector work are
+deferred future research, not active implementation scope.
+
 ## Phase 1 — Baseline reproduction
+
+**Status: complete.** Sprint 1.5 froze and formally validated H4. The tracked
+summary and evidence references are in `reports/SPRINT_1_5_FINAL.md`.
 
 ### Goal
 
@@ -25,6 +44,9 @@ Produce a frozen, action-grounded Qwen3-8B ALFWorld baseline on fixed seen and u
 A reproducible baseline report with trajectories and resolved configurations. Proceed only when the same task/seed schedule is stable enough for paired comparisons.
 
 ## Phase 2 — Trajectory collection and branch labels
+
+**Status: Sprint 2A replay validation only.** Prefix reconstruction must pass
+before branch collection or recovery behavior is implemented.
 
 ### Goal
 
@@ -115,4 +137,3 @@ A paper-ready result package containing:
 - If recovery has no positive opportunity, pivot to measuring reflection quality/recoverability rather than training a selector.
 - If the selector does not beat random selection, report the negative result or simplify to an uncertainty-analysis paper.
 - If compute prevents multiple seeds or fixed task lists, reduce methods and tasks before weakening the evaluation protocol.
-

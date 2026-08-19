@@ -11,6 +11,7 @@ results/*
 __pycache__/
 *.py[cod]
 .pytest_cache/
+*.egg-info/
 
 # Operating-system metadata
 .DS_Store
