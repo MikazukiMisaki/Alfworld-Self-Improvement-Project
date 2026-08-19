@@ -45,15 +45,53 @@ def validate_interface_config_equivalence(
         raise RegressionComparisonError("environment config has an unsupported split")
 
 
+def validate_indexed_context_config_equivalence(
+    h0_collection: dict[str, Any],
+    hk_collection: dict[str, Any],
+    h0_model: dict[str, Any],
+    hk_model: dict[str, Any],
+    environment: dict[str, Any],
+    *,
+    expected_window: int,
+) -> None:
+    """Require H0 and Hk to differ only by bounded-context provenance."""
+    _require_mode(h0_model, "indexed_v1", "indexed_admissible")
+    _require_mode(
+        hk_model, "indexed_bounded_context_v1", "indexed_admissible"
+    )
+    if _without(h0_collection, {"model_config"}) != _without(
+        hk_collection, {"model_config"}
+    ):
+        raise RegressionComparisonError("H0/Hk collection configs differ")
+    if _without(h0_model, {"pipeline_version", "history_context"}) != _without(
+        hk_model, {"pipeline_version", "history_context"}
+    ):
+        raise RegressionComparisonError(
+            "H0/Hk model configs differ beyond pipeline/history context"
+        )
+    context = hk_model.get("history_context")
+    if context != {"mode": "bounded_recent_state", "window": expected_window}:
+        raise RegressionComparisonError(
+            f"Hk must use bounded_recent_state with window {expected_window}"
+        )
+    if h0_model.get("history_context") is not None:
+        raise RegressionComparisonError("H0 must retain its implicit full_raw context")
+    if environment.get("split") not in {"train", "valid_seen", "valid_unseen"}:
+        raise RegressionComparisonError("environment config has an unsupported split")
+
+
 def compare_trajectory_sets(
     reference_trajectories: Sequence[dict[str, Any]],
     indexed_trajectories: Sequence[dict[str, Any]],
     *,
     reference_pipeline: str = "free_form_v1",
+    candidate_pipeline: str = "indexed_v1",
 ) -> dict[str, Any]:
     """Compare ordered trajectories and fail if task/seed matching is not exact."""
-    if reference_pipeline not in {"legacy_v1", "free_form_v1"}:
+    if reference_pipeline not in {"legacy_v1", "free_form_v1", "indexed_v1"}:
         raise RegressionComparisonError("unsupported reference pipeline")
+    if candidate_pipeline not in {"indexed_v1", "indexed_bounded_context_v1"}:
+        raise RegressionComparisonError("unsupported candidate pipeline")
     if len(reference_trajectories) != len(indexed_trajectories):
         raise RegressionComparisonError("run episode counts differ")
     comparisons: list[dict[str, Any]] = []
@@ -67,8 +105,9 @@ def compare_trajectory_sets(
         comparisons.append(compare_trajectories(reference, indexed))
     return {
         "schema_version": 1,
-        "comparison": f"{reference_pipeline}_vs_indexed_v1",
+        "comparison": f"{reference_pipeline}_vs_{candidate_pipeline}",
         "reference_pipeline": reference_pipeline,
+        "candidate_pipeline": candidate_pipeline,
         "matched_episode_count": len(comparisons),
         "episodes": comparisons,
     }

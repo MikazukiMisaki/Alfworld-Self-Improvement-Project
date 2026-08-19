@@ -42,7 +42,11 @@ def main() -> None:
     policy = _policy(model_config)
     action_selection_mode = policy.action_selection_mode
     pipeline_version = str(model_config.get("pipeline_version", ""))
-    expected_pipeline = pipeline_for_action_selection_mode(action_selection_mode)
+    context_config = model_config.get("history_context", {})
+    context_mode = str(context_config.get("mode", "full_raw"))
+    expected_pipeline = pipeline_for_action_selection_mode(
+        action_selection_mode, context_mode
+    )
     if pipeline_version != expected_pipeline:
         raise ValueError(
             "model pipeline_version must match action_selection.mode: "
@@ -141,6 +145,7 @@ def _policy(config: dict[str, Any]) -> QwenPolicy:
         temperature=generation_config.get("temperature"),
         top_p=generation_config.get("top_p"),
     )
+    context_config = config.get("history_context", {})
     return QwenPolicy(
         QwenPolicyConfig(
             model_id=str(config["model_id"]),
@@ -152,6 +157,12 @@ def _policy(config: dict[str, Any]) -> QwenPolicy:
                 config.get("action_selection", {}).get(
                     "mode", "free_form_validated"
                 )
+            ),
+            history_context_mode=str(context_config.get("mode", "full_raw")),
+            history_window=(
+                int(context_config["window"])
+                if context_config.get("window") is not None
+                else None
             ),
             generation=generation,
         )

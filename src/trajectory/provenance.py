@@ -13,6 +13,9 @@ PIPELINE_BY_ACTION_MODE = {
     "free_form_validated": "free_form_v1",
     "indexed_admissible": "indexed_v1",
 }
+PIPELINE_BY_CONTEXT = {
+    ("indexed_admissible", "bounded_recent_state"): "indexed_bounded_context_v1",
+}
 
 
 class ProvenanceError(ValueError):
@@ -43,8 +46,19 @@ class ProvenanceRequirement:
         )
 
 
-def pipeline_for_action_selection_mode(action_selection_mode: str) -> str:
+def pipeline_for_action_selection_mode(
+    action_selection_mode: str, history_context_mode: str = "full_raw"
+) -> str:
     """Return the canonical pipeline version for a supported action interface."""
+    contextual = PIPELINE_BY_CONTEXT.get(
+        (action_selection_mode, history_context_mode)
+    )
+    if contextual is not None:
+        return contextual
+    if history_context_mode != "full_raw":
+        raise ProvenanceError(
+            f"unsupported history context mode: {history_context_mode!r}"
+        )
     try:
         return PIPELINE_BY_ACTION_MODE[action_selection_mode]
     except KeyError as error:
@@ -61,13 +75,6 @@ def validate_manifest_provenance(
     pipeline_version = _required_string(manifest, "pipeline_version")
     action_selection_mode = _required_string(manifest, "action_selection_mode")
     split = _required_string(manifest, "split")
-    expected_pipeline = pipeline_for_action_selection_mode(action_selection_mode)
-    if pipeline_version != expected_pipeline:
-        raise ProvenanceError(
-            "pipeline_version does not match action_selection_mode: "
-            f"{pipeline_version!r} != {expected_pipeline!r}"
-        )
-
     resolved_config = manifest.get("resolved_config")
     if not isinstance(resolved_config, dict):
         raise ProvenanceError("manifest is missing resolved_config")
@@ -78,6 +85,18 @@ def validate_manifest_provenance(
     selection_config = model_config.get("action_selection")
     if not isinstance(selection_config, dict):
         raise ProvenanceError("manifest model config is missing action_selection")
+    context_config = model_config.get("history_context", {})
+    if not isinstance(context_config, dict):
+        raise ProvenanceError("manifest model history_context must be a mapping")
+    context_mode = str(context_config.get("mode", "full_raw"))
+    expected_pipeline = pipeline_for_action_selection_mode(
+        action_selection_mode, context_mode
+    )
+    if pipeline_version != expected_pipeline:
+        raise ProvenanceError(
+            "pipeline_version does not match action-selection/context provenance: "
+            f"{pipeline_version!r} != {expected_pipeline!r}"
+        )
     if selection_config.get("mode") != action_selection_mode:
         raise ProvenanceError("top-level and resolved action-selection modes disagree")
     if model_config.get("pipeline_version") != pipeline_version:

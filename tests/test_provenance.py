@@ -30,6 +30,23 @@ class ProvenanceTests(unittest.TestCase):
         with self.assertRaisesRegex(ProvenanceError, "does not match"):
             validate_manifest_provenance(manifest)
 
+    def test_bounded_indexed_context_has_distinct_pipeline_provenance(self) -> None:
+        manifest = self._manifest()
+        model = manifest["resolved_config"]["model"]
+        model["action_selection"]["mode"] = "indexed_admissible"
+        model["history_context"] = {
+            "mode": "bounded_recent_state",
+            "window": 4,
+        }
+        model["pipeline_version"] = "indexed_bounded_context_v1"
+        manifest["pipeline_version"] = "indexed_bounded_context_v1"
+        manifest["action_selection_mode"] = "indexed_admissible"
+        validate_manifest_provenance(manifest)
+
+        model["history_context"]["mode"] = "full_raw"
+        with self.assertRaisesRegex(ProvenanceError, "does not match"):
+            validate_manifest_provenance(manifest)
+
     def test_loader_prevents_mixed_pipeline_consumption(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             run = self._write_run(Path(directory), self._manifest())

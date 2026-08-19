@@ -20,6 +20,8 @@ class QwenPolicyConfig:
     enable_thinking: bool = False
     generation: GenerationOptions = GenerationOptions()
     action_selection_mode: str = "free_form_validated"
+    history_context_mode: str = "full_raw"
+    history_window: int | None = None
 
     def __post_init__(self) -> None:
         if self.action_selection_mode not in {
@@ -29,6 +31,17 @@ class QwenPolicyConfig:
             raise ValueError(
                 "action_selection_mode must be free_form_validated or indexed_admissible"
             )
+        if self.history_context_mode not in {"full_raw", "bounded_recent_state"}:
+            raise ValueError(
+                "history_context_mode must be full_raw or bounded_recent_state"
+            )
+        if self.history_context_mode == "bounded_recent_state":
+            if self.action_selection_mode != "indexed_admissible":
+                raise ValueError("bounded_recent_state requires indexed_admissible")
+            if self.history_window is None or self.history_window < 1:
+                raise ValueError("bounded_recent_state requires a positive history_window")
+        elif self.history_window is not None:
+            raise ValueError("history_window is only valid for bounded_recent_state")
 
 
 class QwenPolicy(ActionPolicy):
@@ -52,11 +65,14 @@ class QwenPolicy(ActionPolicy):
     def act(self, request: ActionRequest) -> ActionDecision:
         """Generate, parse, and record one action without environment side effects."""
         tokenizer, model, torch = self._load()
-        prompt = (
-            self._indexed_prompt(request)
-            if self._config.action_selection_mode == "indexed_admissible"
-            else self._prompt(request)
-        )
+        if self._config.action_selection_mode == "indexed_admissible":
+            prompt = (
+                self._indexed_bounded_prompt(request, self._config.history_window)
+                if self._config.history_context_mode == "bounded_recent_state"
+                else self._indexed_prompt(request)
+            )
+        else:
+            prompt = self._prompt(request)
         messages = [{"role": "user", "content": prompt}]
         if hasattr(tokenizer, "apply_chat_template"):
             rendered = tokenizer.apply_chat_template(
@@ -87,7 +103,14 @@ class QwenPolicy(ActionPolicy):
         generated_tokens = generated.sequences[0][input_tokens:]
         raw_output = tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
         if self._config.action_selection_mode == "indexed_admissible":
-            return self._indexed_decision(request, prompt, raw_output, generated, torch)
+            return self._indexed_decision(
+                request,
+                prompt,
+                raw_output,
+                generated,
+                torch,
+                input_tokens=input_tokens,
+            )
         parsed = parse_action(raw_output, request.valid_actions)
         return ActionDecision(
             action=parsed.action,
@@ -95,7 +118,9 @@ class QwenPolicy(ActionPolicy):
             parser_status=parsed.status,
             reasoning=parsed.reasoning,
             model_version=self.model_version,
-            token_statistics=self._token_statistics(generated, torch),
+            token_statistics=self._token_statistics(
+                generated, torch, input_tokens=input_tokens
+            ),
             metadata={
                 "prompt": prompt,
                 "prompt_version": "free-form-action-v1",
@@ -125,6 +150,8 @@ class QwenPolicy(ActionPolicy):
         raw_output: str,
         generated: Any,
         torch: Any,
+        *,
+        input_tokens: int | None = None,
     ) -> ActionDecision:
         """Map one strict action ID to the exact environment-owned command."""
         parsed = parse_action_id(raw_output, request.valid_actions)
@@ -135,10 +162,20 @@ class QwenPolicy(ActionPolicy):
             parser_status="grounded" if parsed.status == "selected" else parsed.status,
             reasoning=None,
             model_version=self.model_version,
-            token_statistics=self._token_statistics(generated, torch),
+            token_statistics=self._token_statistics(
+                generated, torch, input_tokens=input_tokens
+            ),
             metadata={
                 "prompt": prompt,
-                "prompt_version": "indexed-admissible-action-v1",
+                "prompt_version": (
+                    "indexed-admissible-bounded-context-v1"
+                    if self._config.history_context_mode == "bounded_recent_state"
+                    else "indexed-admissible-action-v1"
+                ),
+                "history_context": {
+                    "mode": self._config.history_context_mode,
+                    "window": self._config.history_window,
+                },
                 "generation": self._generation_metadata(),
                 "action_selection_mode": "indexed_admissible",
                 "action_selection": {
@@ -247,6 +284,58 @@ class QwenPolicy(ActionPolicy):
             "Your response:"
         )
 
+    @staticmethod
+    def _indexed_bounded_prompt(
+        request: ActionRequest, history_window: int | None
+    ) -> str:
+        """Render goal-preserving state with only the latest exact transitions."""
+        if history_window is None or history_window < 1:
+            raise ValueError("history_window must be positive")
+        mapping = action_id_mapping(request.valid_actions or ())
+        valid_actions = (
+            "\n".join(
+                f"[{action_id}] {action}" for action_id, action in mapping.items()
+            )
+            if mapping
+            else "No admissible action list is available."
+        )
+        start = max(0, len(request.history) - history_window)
+        transitions: list[str] = []
+        for index in range(start, len(request.history)):
+            action = request.history[index][1]
+            result = (
+                request.history[index + 1][0]
+                if index + 1 < len(request.history)
+                else request.observation
+            )
+            transitions.append(f"Action: {action}\nResult: {result}")
+        inventory = (
+            request.observation
+            if request.history and request.history[-1][1].strip() == "inventory"
+            else "(not available from the environment)"
+        )
+        transition_text = "\n\n".join(transitions) if transitions else "(none)"
+        return (
+            "You are an ALFWorld household agent. Select exactly one next action ID.\n"
+            "Return exactly one line in this format:\n"
+            "Action-ID: Axyz\n"
+            "Choose one ID exactly as written in the indexed valid-actions list. "
+            "Do not output a command, explanation, reasoning, or <think> tags.\n\n"
+            "Decision rules:\n"
+            "1. Keep pursuing the stated task until it is complete.\n"
+            "2. Only take, move, heat, cool, or clean an object required by the task.\n"
+            "3. When searching, inspect unexamined plausible locations before revisiting one.\n"
+            "4. Do not alternate between locations or undo recent progress without a task-related reason.\n"
+            "5. After taking a required object, use the task destination or required transformation.\n\n"
+            f"Task goal:\n{request.task.text}\n\n"
+            f"Current observation:\n{request.observation}\n\n"
+            f"Current inventory:\n{inventory}\n\n"
+            f"Recent action/result transitions (last {history_window}):\n"
+            f"{transition_text}\n\n"
+            f"Indexed valid actions:\n{valid_actions}\n\n"
+            "Your response:"
+        )
+
     def _generation_metadata(self) -> dict[str, Any]:
         options = self._config.generation
         return {
@@ -256,13 +345,17 @@ class QwenPolicy(ActionPolicy):
             "top_p": options.top_p,
             "enable_thinking": self._config.enable_thinking,
             "action_selection_mode": self._config.action_selection_mode,
+            "history_context_mode": self._config.history_context_mode,
+            "history_window": self._config.history_window,
         }
 
     @staticmethod
-    def _token_statistics(generated: Any, torch: Any) -> TokenStatistics:
+    def _token_statistics(
+        generated: Any, torch: Any, *, input_tokens: int | None = None
+    ) -> TokenStatistics:
         scores = generated.scores or ()
         if not scores:
-            return TokenStatistics(generated_tokens=0)
+            return TokenStatistics(generated_tokens=0, input_tokens=input_tokens)
         log_probabilities: list[float] = []
         entropies: list[float] = []
         token_ids = generated.sequences[0][-len(scores) :]
@@ -275,4 +368,5 @@ class QwenPolicy(ActionPolicy):
             generated_tokens=len(scores),
             mean_token_log_probability=sum(log_probabilities) / len(log_probabilities),
             mean_token_entropy=sum(entropies) / len(entropies),
+            input_tokens=input_tokens,
         )

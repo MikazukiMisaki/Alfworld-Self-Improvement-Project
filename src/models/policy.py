@@ -25,6 +25,7 @@ class TokenStatistics:
     generated_tokens: int
     mean_token_log_probability: float | None = None
     mean_token_entropy: float | None = None
+    input_tokens: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serializable representation."""
