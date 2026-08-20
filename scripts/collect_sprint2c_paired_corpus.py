@@ -651,13 +651,39 @@ def _validate_prefixes_against_pool(
             "remaining_horizon",
             "state_fingerprint",
             "original_h4_continue_action",
-            "decision_features",
             "valid_actions",
         ):
             if prefix[key] != state[key]:
                 raise RuntimeError(
                     f"source state field {key} changed for {prefix['prefix_id']}"
                 )
+        if not _decision_features_equal(
+            prefix["decision_features"],
+            state["decision_features"],
+            manifest["selection_protocol"]["entropy_grouping_thresholds"],
+        ):
+            raise RuntimeError(
+                f"source state field decision_features changed for {prefix['prefix_id']}"
+            )
+
+
+def _decision_features_equal(
+    selected: dict[str, Any],
+    source: dict[str, Any],
+    thresholds: dict[str, float],
+) -> bool:
+    source_with_quantile = dict(source)
+    entropy = float(source_with_quantile["h4_decision_token_entropy"])
+    if entropy < thresholds["q25"]:
+        quantile = "Q1"
+    elif entropy < thresholds["q50"]:
+        quantile = "Q2"
+    elif entropy < thresholds["q75"]:
+        quantile = "Q3"
+    else:
+        quantile = "Q4"
+    source_with_quantile["entropy_quantile"] = quantile
+    return selected == source_with_quantile
 
 
 def _read_object(path: Path) -> dict[str, Any]:

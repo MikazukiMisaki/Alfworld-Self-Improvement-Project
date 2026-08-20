@@ -13,6 +13,7 @@ from recovery.corpus import (
     validate_pool_schedule,
 )
 from scripts.collect_sprint2c_paired_corpus import (
+    _decision_features_equal,
     _validate_record_schema,
     aggregate_pairs,
 )
@@ -223,6 +224,21 @@ def test_record_schema_keeps_grouping_and_features_frozen() -> None:
     schema["selector_feature_allowlist"].append("continue_return")
     with pytest.raises(RuntimeError, match="allowlist"):
         _validate_record_schema(schema)
+
+
+def test_source_feature_validation_recomputes_frozen_entropy_quantile() -> None:
+    source = {
+        "h4_decision_token_entropy": 0.25,
+        "entropy_quantile": None,
+        "observation": "same",
+    }
+    selected = {**source, "entropy_quantile": "Q2"}
+    thresholds = {"q25": 0.1, "q50": 0.3, "q75": 0.5}
+
+    assert _decision_features_equal(selected, source, thresholds)
+    assert not _decision_features_equal(
+        {**selected, "observation": "changed"}, source, thresholds
+    )
 
 
 def test_corpus_gate_requires_label_count_and_episode_family_diversity() -> None:
