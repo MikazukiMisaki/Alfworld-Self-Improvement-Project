@@ -1,0 +1,203 @@
+{
+  "schema_version": "r2_two_stage_development_v1",
+  "frozen_before_execution": true,
+  "development_prefixes": true,
+  "eligible_as_held_out_evidence": false,
+  "prefix_count": 10,
+  "excluded_prior_recovery_seeds": [
+    1005,
+    1009,
+    1010,
+    1022,
+    1027
+  ],
+  "source": {
+    "baseline_git_revision": "08bc212d7b2ed1e38665f4b3049638ffe3a60005",
+    "formal_run": "artifacts/runtime/validation/sprint1-5-h4-formal-20260819T191000Z/h4",
+    "analysis": "artifacts/runtime/validation/sprint1-5-h4-formal-20260819T191000Z/analysis.json",
+    "analysis_sha256": "b357f3380015665de9c4e5dc4aed75113f9fc1ac5024bf2ea7f1562315c66fbe",
+    "schedule": "artifacts/runtime/validation/sprint1-5-h4-formal-20260819T191000Z/schedule.json",
+    "schedule_sha256": "ee79fae0c62c618c4495c5c9ff45b8a95a463e7775ee82d55c922418a9273441",
+    "trajectory_sha256": "48ddb86e33957549d34f8c449870c027f73100d64cdee642c04d98a625e7223b",
+    "joint_v2_report": "artifacts/runtime/recovery/sprint2b-revised-development-20260819T233000Z/report.json",
+    "joint_v2_report_sha256": "0b8d74fc1b3bd979b6ca4a6120e1c4f7aae165395ef25569b4ad69186d006b5a"
+  },
+  "baseline": {
+    "model_id": "Qwen/Qwen3-8B",
+    "pipeline_version": "indexed_bounded_context_v1",
+    "action_selection_mode": "indexed_admissible",
+    "history_context_mode": "bounded_recent_state",
+    "history_window": 4,
+    "enable_thinking": false,
+    "do_sample": false,
+    "max_new_tokens": 32,
+    "max_episode_steps": 50,
+    "split": "valid_seen"
+  },
+  "recovery": {
+    "operator_version": "two_stage_bounded_recovery_v1",
+    "model_id": "Qwen/Qwen3-8B",
+    "model_calls_per_intervention": 2,
+    "environment_actions_per_intervention": 1,
+    "enable_thinking": false,
+    "do_sample": false,
+    "stage_one": {
+      "prompt_version": "two-stage-diagnosis-subgoal-v1",
+      "max_new_tokens": 40,
+      "maximum_diagnosis_words": 12,
+      "maximum_subgoal_words": 12
+    },
+    "stage_two": {
+      "prompt_version": "two-stage-subgoal-action-id-v1",
+      "max_new_tokens": 16,
+      "output_contract": "Action-ID: Axxx"
+    },
+    "retry_on_failure": false,
+    "fallback_or_repair": false,
+    "oracle_state": false,
+    "memory": false
+  },
+  "historical_joint_v2_development_evidence": {
+    "controlled_head_to_head": false,
+    "prefix_count": 5,
+    "malformed_output_count": 0,
+    "diagnosis_action_agreement_count": 1,
+    "beneficial_count": 1,
+    "neutral_count": 4,
+    "harmful_count": 0,
+    "mean_generated_tokens": 23.6,
+    "mean_latency_seconds": 0.947
+  },
+  "prefixes": [
+    {
+      "schedule_index": 0,
+      "seed": 1000,
+      "task_id": "pick_and_place_simple-Book-None-Sofa-229/trial_T20190907_042856_259139",
+      "task_family": "pick_and_place_simple",
+      "prefix_step": 4,
+      "replayed_action_count": 5,
+      "remaining_horizon": 45,
+      "original_frozen_continuation_action": "take keychain 2 from sofa 1",
+      "prefix_sha256": "095232476ccbd506e7b3b1ffac420058a10ee405f6df4f7c88846bac3cac75e0",
+      "selection_categories": ["strict_abab_loop"],
+      "selection_reason": "Strict take/move alternation on an off-target keychain at the destination."
+    },
+    {
+      "schedule_index": 2,
+      "seed": 1002,
+      "task_id": "pick_cool_then_place_in_recep-Bowl-None-Cabinet-20/trial_T20190909_112912_154874",
+      "task_family": "pick_cool_then_place_in_recep",
+      "prefix_step": 18,
+      "replayed_action_count": 19,
+      "remaining_horizon": 31,
+      "original_frozen_continuation_action": "take pot 2 from cabinet 1",
+      "prefix_sha256": "c5c1ec7e085f20622d773aa9bd4e4c5648122d5a8b340062ffb6bcc0722658cc",
+      "selection_categories": ["strict_abab_loop"],
+      "selection_reason": "Strict take/move alternation on a cooled off-target pot in the cabinet."
+    },
+    {
+      "schedule_index": 4,
+      "seed": 1004,
+      "task_id": "look_at_obj_in_light-KeyChain-None-DeskLamp-327/trial_T20190906_202601_548273",
+      "task_family": "look_at_obj_in_light",
+      "prefix_step": 4,
+      "replayed_action_count": 5,
+      "remaining_horizon": 45,
+      "original_frozen_continuation_action": "examine desk 1",
+      "prefix_sha256": "743d62d6b207cd5ed9d83c4c87276577a0efbc2e33777e513f39457beeda5a58",
+      "selection_categories": ["adjacent_repeat_stall"],
+      "selection_reason": "Four consecutive desk examinations without locating the target keychain."
+    },
+    {
+      "schedule_index": 19,
+      "seed": 1019,
+      "task_id": "pick_heat_then_place_in_recep-Tomato-None-Fridge-15/trial_T20190909_020200_054379",
+      "task_family": "pick_heat_then_place_in_recep",
+      "prefix_step": 8,
+      "replayed_action_count": 9,
+      "remaining_horizon": 41,
+      "original_frozen_continuation_action": "look",
+      "prefix_sha256": "30384dd2c256f229de1980b455d922399cc82e3977c7b6b6c27be08cf3f87104",
+      "selection_categories": ["adjacent_repeat_stall"],
+      "selection_reason": "Four consecutive look actions at an empty stoveburner without progress."
+    },
+    {
+      "schedule_index": 1,
+      "seed": 1001,
+      "task_id": "pick_cool_then_place_in_recep-Tomato-None-CounterTop-12/trial_T20190909_063754_216554",
+      "task_family": "pick_cool_then_place_in_recep",
+      "prefix_step": 3,
+      "replayed_action_count": 4,
+      "remaining_horizon": 46,
+      "original_frozen_continuation_action": "go to countertop 1",
+      "prefix_sha256": "8244fbed4a45751396b20640deae6eb0fd251e49feee5e9097c43bdb2ff0dcd6",
+      "selection_categories": ["wrong_object_off_target"],
+      "selection_reason": "The policy cooled a potato while the task requires a tomato."
+    },
+    {
+      "schedule_index": 13,
+      "seed": 1013,
+      "task_id": "pick_and_place_simple-WineBottle-None-Shelf-7/trial_T20190907_200154_378982",
+      "task_family": "pick_and_place_simple",
+      "prefix_step": 4,
+      "replayed_action_count": 5,
+      "remaining_horizon": 45,
+      "original_frozen_continuation_action": "move statue 1 to shelf 2",
+      "prefix_sha256": "95232f30208ae3267e8aca561fc875fe53dc402f7ed7cb229eed4b494fe9ad90",
+      "selection_categories": ["wrong_object_off_target"],
+      "selection_reason": "The policy picked up a statue while searching for a wine bottle."
+    },
+    {
+      "schedule_index": 7,
+      "seed": 1007,
+      "task_id": "pick_clean_then_place_in_recep-Lettuce-None-Fridge-19/trial_T20190908_100138_446072",
+      "task_family": "pick_clean_then_place_in_recep",
+      "prefix_step": 2,
+      "replayed_action_count": 3,
+      "remaining_horizon": 47,
+      "original_frozen_continuation_action": "go to fridge 1",
+      "prefix_sha256": "52e0b444938d14945735568db71db2d445fb174cdea604ceee47f8263b8d0c2a",
+      "selection_categories": ["wrong_tool_or_state_progression"],
+      "selection_reason": "The policy cleaned an off-target tomato instead of the required lettuce."
+    },
+    {
+      "schedule_index": 24,
+      "seed": 1024,
+      "task_id": "pick_heat_then_place_in_recep-Egg-None-CounterTop-2/trial_T20190908_122951_021026",
+      "task_family": "pick_heat_then_place_in_recep",
+      "prefix_step": 10,
+      "replayed_action_count": 11,
+      "remaining_horizon": 39,
+      "original_frozen_continuation_action": "go to stoveburner 4",
+      "prefix_sha256": "2f2bc385b9616bb4dcb5e258987ac30d2dc7b7c8fa9fa6524a4ae19401e118e7",
+      "selection_categories": ["wrong_tool_or_state_progression"],
+      "selection_reason": "The policy picked up a pot after repeated stoveburner inspection, not the egg."
+    },
+    {
+      "schedule_index": 11,
+      "seed": 1011,
+      "task_id": "pick_cool_then_place_in_recep-Tomato-None-Microwave-18/trial_T20190909_012524_159092",
+      "task_family": "pick_cool_then_place_in_recep",
+      "prefix_step": 4,
+      "replayed_action_count": 5,
+      "remaining_horizon": 45,
+      "original_frozen_continuation_action": "move apple 1 to microwave 1",
+      "prefix_sha256": "b258cfde681ad215040b7d93a4795ef73adad957970fa6b952b7a3822eaa8d55",
+      "selection_categories": ["ordinary_non_loop_failure"],
+      "selection_reason": "A non-looping failed trajectory has just taken an off-target apple."
+    },
+    {
+      "schedule_index": 18,
+      "seed": 1018,
+      "task_id": "pick_two_obj_and_place-SprayBottle-None-Toilet-429/trial_T20190907_033843_707544",
+      "task_family": "pick_two_obj_and_place",
+      "prefix_step": 9,
+      "replayed_action_count": 10,
+      "remaining_horizon": 40,
+      "original_frozen_continuation_action": "take cloth 1 from toilet 1",
+      "prefix_sha256": "7f4c969c916668aa95751baf19152e2485ec97d75200be959119b4b85657afbd",
+      "selection_categories": ["ordinary_non_loop_failure"],
+      "selection_reason": "A non-looping failed trajectory placed two cloths instead of spray bottles."
+    }
+  ]
+}
