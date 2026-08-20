@@ -421,12 +421,22 @@ def _aggregate(pairs: list[dict[str, Any]]) -> dict[str, Any]:
         ),
         "stage_one_valid_count": sum(item["status"] == "valid" for item in stage_one),
         "stage_one_complete_count": sum(item["output_complete"] for item in stage_one),
-        "stage_one_truncated_count": sum(item["token_cap_reached"] for item in stage_one),
+        "stage_one_incomplete_count": sum(
+            not item["output_complete"] for item in stage_one
+        ),
+        "stage_one_token_cap_reached_count": sum(
+            item["token_cap_reached"] for item in stage_one
+        ),
         "stage_two_selected_count": sum(
             item["selection_status"] == "selected" for item in stage_two
         ),
         "stage_two_complete_count": sum(item["output_complete"] for item in stage_two),
-        "stage_two_truncated_count": sum(item["token_cap_reached"] for item in stage_two),
+        "stage_two_incomplete_count": sum(
+            not item["output_complete"] for item in stage_two
+        ),
+        "stage_two_token_cap_reached_count": sum(
+            item["token_cap_reached"] for item in stage_two
+        ),
         "mean_stage_one_generated_tokens": _mean(
             item["stage_one_generated_tokens"] for item in costs
         ),
