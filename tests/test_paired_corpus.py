@@ -211,6 +211,15 @@ def test_pair_aggregation_keeps_labels_protocol_and_cost_separate() -> None:
         "unchanged": 1,
     }
 
+    stage_one_failure = _pair(
+        continue_return=0.0, recover_return=0.0, loop_change="unchanged"
+    )
+    stage_one_failure["recovery"]["status"] = "stage_one_failure"
+    stage_one_failure["branch_validation"]["recovery_environment_action_count"] = 0
+    failed_aggregate = aggregate_pairs([stage_one_failure])
+    assert failed_aggregate["protocol"]["mapping_failure_count"] == 0
+    assert failed_aggregate["protocol"]["recovery_action_not_executed_count"] == 1
+
 
 def test_record_schema_keeps_grouping_and_features_frozen() -> None:
     from pathlib import Path
@@ -299,6 +308,7 @@ def _pair(
         },
         "branch_validation": {"recovery_environment_action_count": 1},
         "recovery": {
+            "status": "selected",
             "stage_one": {
                 "status": "valid",
                 "output_complete": True,

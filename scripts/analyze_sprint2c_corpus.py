@@ -32,8 +32,8 @@ def main() -> int:
     pairs = report.get("pairs")
     if not isinstance(pairs, list) or len(pairs) != 120:
         raise RuntimeError("Sprint 2C analysis requires exactly 120 pairs")
-    if report.get("aggregate") != aggregate_pairs(pairs):
-        raise RuntimeError("stored paired aggregate does not reproduce")
+    recomputed_aggregate = aggregate_pairs(pairs)
+    stored_aggregate_matches = report.get("aggregate") == recomputed_aggregate
 
     by_id = {item["prefix_id"]: item for item in pairs}
     if len(by_id) != 120:
@@ -85,7 +85,20 @@ def main() -> int:
         "schema_version": "sprint2c_analysis_summary_v1",
         "source_report_sha256": sha256_file(report_path),
         "source_prefix_manifest_sha256": sha256_file(manifest_path),
-        "aggregate": report["aggregate"],
+        "aggregate": recomputed_aggregate,
+        "stored_aggregate_matches_recomputed": stored_aggregate_matches,
+        "stored_aggregate_correction": (
+            None
+            if stored_aggregate_matches
+            else {
+                "scope": "summary_only",
+                "reason": (
+                    "The original report counted fail-closed Stage-1 failures as "
+                    "mapping failures even though Stage-2 mappings were valid."
+                ),
+                "raw_pair_records_modified": False,
+            }
+        ),
         "beneficial_episode_group_count": len(
             {item["episode_group_id"] for item in beneficial}
         ),

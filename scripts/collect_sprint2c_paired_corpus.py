@@ -410,7 +410,7 @@ def aggregate_pairs(pairs: list[dict[str, Any]]) -> dict[str, Any]:
                 not item["output_complete"] for item in stage_two
             ),
             "mapping_failure_count": sum(
-                item["recovery"]["stage_two"]["selection_status"] == "selected"
+                item["recovery"]["status"] == "selected"
                 and item["branch_validation"]["recovery_environment_action_count"]
                 != 1
                 for item in pairs
