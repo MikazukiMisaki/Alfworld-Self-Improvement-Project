@@ -9,10 +9,14 @@ Sprint 1.5 is complete. The frozen baseline is
 `indexed_bounded_context_v1`, using indexed admissible actions and bounded
 goal-preserving recent-state context with `k=4`.
 
-The current milestone is Sprint 2A deterministic prefix replay validation.
-Baseline tuning is prohibited unless replay reveals a genuine implementation
-defect. Recovery, reflection, selectors, memory, DPO, PPO, and GRPO remain out
-of scope.
+Sprint 2A deterministic prefix replay passed. Sprint 2B joint recovery showed
+one positive causal recovery case, but diagnosis-to-action agreement remained
+insufficient after one revision. The next architecture is two-stage bounded
+recovery using the same Qwen3-8B; no selector has been implemented.
+
+Seeds 1005, 1009, 1010, 1022, and 1027 are development-only and are not
+eligible as held-out evaluation evidence. Baseline tuning, memory, DPO, PPO,
+and GRPO remain out of scope.
 
 See `reports/SPRINT_1_5_FINAL.md` for the frozen configuration and formal
 30-episode result.

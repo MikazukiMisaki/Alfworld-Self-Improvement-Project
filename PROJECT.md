@@ -12,8 +12,12 @@ selection with bounded goal-preserving recent-state context (`k=4`). Its exact
 configuration, revision, schedule hash, and formal 30-episode result are in
 `reports/SPRINT_1_5_FINAL.md`.
 
-The current milestone is Sprint 2A, which is limited to validating deterministic
-trajectory-prefix replay/reconstruction. Do not tune the baseline unless replay
-validation exposes a genuine implementation defect. Recovery, reflection,
-selector logic, DPO, memory, PPO, and GRPO are deferred and are not part of
-Sprint 2A.
+Sprint 2A passed deterministic trajectory-prefix replay validation. Sprint 2B
+joint recovery demonstrated one non-zero positive causal intervention, but
+diagnosis-to-action agreement remained 1/5 after the single allowed operator
+revision. Formatting is reliable; semantic action selection is not.
+
+The next architecture is two-stage bounded recovery with the same Qwen3-8B:
+one diagnosis/subgoal call followed by one Action-ID call. No selector is
+implemented. Seeds 1005, 1009, 1010, 1022, and 1027 are development-only and
+are ineligible as held-out evaluation evidence.
