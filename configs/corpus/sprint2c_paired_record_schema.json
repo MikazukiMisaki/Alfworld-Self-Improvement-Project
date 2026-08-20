@@ -1,0 +1,54 @@
+{
+  "schema_version": "sprint2c_paired_record_schema_v1",
+  "record_schema": "sprint2c_paired_state_v1",
+  "group_split_key": "episode_group_id",
+  "primary_labels": [
+    "continue_return",
+    "recover_return",
+    "v_raw",
+    "classification",
+    "continue_failure_label"
+  ],
+  "selector_feature_path": "decision_features",
+  "selector_feature_allowlist": [
+    "task_family",
+    "step_index",
+    "normalized_step",
+    "remaining_horizon",
+    "normalized_remaining_horizon",
+    "admissible_action_count",
+    "h4_proposed_action_id",
+    "h4_proposed_mapped_command",
+    "h4_decision_token_entropy",
+    "h4_selected_action_log_probability",
+    "h4_input_token_count",
+    "recent_adjacent_repeat_count",
+    "recent_adjacent_repeat_indicator",
+    "recent_two_cycle_count",
+    "recent_two_cycle_indicator",
+    "recent_unique_action_count",
+    "current_observation_repeats_recent",
+    "current_observation",
+    "task_goal",
+    "recent_transition_text",
+    "entropy_quantile"
+  ],
+  "never_selector_features": [
+    "sampling stratum source outcome",
+    "hidden TextWorld state",
+    "continue return",
+    "recover return",
+    "future loop counts",
+    "qualitative annotations"
+  ],
+  "replay_evidence_path": "reconstruction_provenance",
+  "recovery_observations_path": "recovery",
+  "cost_path": "recovery.cost",
+  "post_run_analysis_path": "post_run_analysis",
+  "qualitative_annotation_path": "qualitative_annotation",
+  "notes": [
+    "Sampling metadata and labels are stored outside decision_features.",
+    "States sharing episode_group_id must remain in the same future data split.",
+    "Raw intervention value is stored separately from intervention cost."
+  ]
+}
