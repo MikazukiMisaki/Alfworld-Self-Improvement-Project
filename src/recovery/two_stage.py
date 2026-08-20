@@ -90,6 +90,8 @@ class TwoStageRecoveryDecision:
     status: str
     failure_reason: str | None
     model_call_count: int = 2
+    operator_version: str = RECOVERY_OPERATOR_VERSION
+    stage_two_prompt_version: str = STAGE_TWO_PROMPT_VERSION
 
     @property
     def action_id(self) -> str | None:
@@ -122,8 +124,8 @@ class TwoStageRecoveryDecision:
             reasoning=None,
             metadata={
                 "prompt": self.stage_two.generation.prompt,
-                "prompt_version": STAGE_TWO_PROMPT_VERSION,
-                "recovery_operator_version": RECOVERY_OPERATOR_VERSION,
+                "prompt_version": self.stage_two_prompt_version,
+                "recovery_operator_version": self.operator_version,
                 "recovery_model_call_count": self.model_call_count,
                 "recovery_stage_one": {
                     "prompt_version": STAGE_ONE_PROMPT_VERSION,

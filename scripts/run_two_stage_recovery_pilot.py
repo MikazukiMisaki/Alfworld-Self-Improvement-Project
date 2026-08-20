@@ -10,6 +10,7 @@ import subprocess
 import sys
 import time
 from collections import Counter
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -23,16 +24,24 @@ from env.alfworld import AlfWorldTextEnvironment  # noqa: E402
 from env.replay import replay_prefix, repeated_replay_equal  # noqa: E402
 from recovery.pilot import prefix_hash, run_branch  # noqa: E402
 from recovery.two_stage import (  # noqa: E402
-    RECOVERY_OPERATOR_VERSION,
     STAGE_ONE_INSTRUCTIONS,
     STAGE_ONE_MAX_NEW_TOKENS,
     STAGE_ONE_PROMPT_VERSION,
-    STAGE_TWO_INSTRUCTIONS,
     STAGE_TWO_MAX_NEW_TOKENS,
-    STAGE_TWO_PROMPT_VERSION,
     GenerationRecord,
-    TwoStageRecoveryOperator,
 )
+from recovery.two_stage import (  # noqa: E402
+    RECOVERY_OPERATOR_VERSION as V1_OPERATOR_VERSION,
+)
+from recovery.two_stage import STAGE_TWO_INSTRUCTIONS as V1_STAGE_TWO_INSTRUCTIONS  # noqa: E402
+from recovery.two_stage import STAGE_TWO_PROMPT_VERSION as V1_STAGE_TWO_PROMPT_VERSION  # noqa: E402
+from recovery.two_stage import TwoStageRecoveryOperator as V1_OPERATOR  # noqa: E402
+from recovery.two_stage_v2 import (  # noqa: E402
+    RECOVERY_OPERATOR_VERSION as V2_OPERATOR_VERSION,
+)
+from recovery.two_stage_v2 import STAGE_TWO_INSTRUCTIONS as V2_STAGE_TWO_INSTRUCTIONS  # noqa: E402
+from recovery.two_stage_v2 import STAGE_TWO_PROMPT_VERSION as V2_STAGE_TWO_PROMPT_VERSION  # noqa: E402
+from recovery.two_stage_v2 import TwoStageRecoveryV2Operator as V2_OPERATOR  # noqa: E402
 from scripts.collect_baseline import _environment, _policy  # noqa: E402
 from trajectory.provenance import (  # noqa: E402
     ProvenanceRequirement,
@@ -48,7 +57,31 @@ EXPECTED_CATEGORIES = {
     "wrong_tool_or_state_progression",
     "ordinary_non_loop_failure",
 }
-FORBIDDEN_SEEDS = {1005, 1009, 1010, 1022, 1027}
+V1_FORBIDDEN_SEEDS = {1005, 1009, 1010, 1022, 1027}
+V2_FORBIDDEN_SEEDS = V1_FORBIDDEN_SEEDS | {
+    1000,
+    1001,
+    1002,
+    1004,
+    1007,
+    1011,
+    1013,
+    1018,
+    1019,
+    1024,
+}
+
+
+@dataclass(frozen=True)
+class RecoveryProtocol:
+    run_schema_version: str
+    operator_version: str
+    stage_two_prompt_version: str
+    stage_two_instructions: str
+    operator_class: type
+    forbidden_seeds: set[int]
+    output_contract: str
+    parser_regex: str | None = None
 
 
 def main() -> int:
@@ -64,6 +97,7 @@ def main() -> int:
     config_path = arguments.config.resolve()
     manifest_hash = _verify_frozen_manifest(config_path)
     pilot_config = _read_object(config_path)
+    protocol = _protocol(pilot_config)
     source = pilot_config["source"]
     schedule_path = PROJECT_ROOT / source["schedule"]
     run_path = PROJECT_ROOT / source["formal_run"]
@@ -71,10 +105,12 @@ def main() -> int:
     _require_hash(schedule_path, source["schedule_sha256"])
     _require_hash(run_path / "trajectory.jsonl", source["trajectory_sha256"])
     _require_hash(analysis_path, source["analysis_sha256"])
-    _require_hash(
-        PROJECT_ROOT / source["joint_v2_report"],
-        source["joint_v2_report_sha256"],
-    )
+    for report_key in ("joint_v2_report", "r2_v1_report"):
+        if report_key in source:
+            _require_hash(
+                PROJECT_ROOT / source[report_key],
+                source[f"{report_key}_sha256"],
+            )
     schedule = _read_object(schedule_path)
     analysis = _read_object(analysis_path)
     baseline_manifest, trajectories = load_run_trajectories(
@@ -85,24 +121,24 @@ def main() -> int:
             split="valid_seen",
         ),
     )
-    _validate_frozen_configuration(pilot_config, baseline_manifest)
-    _validate_prefixes(pilot_config, schedule, analysis, trajectories)
+    _validate_frozen_configuration(pilot_config, baseline_manifest, protocol)
+    _validate_prefixes(pilot_config, schedule, analysis, trajectories, protocol)
 
     arguments.output.mkdir(parents=True)
     manifest_bytes = config_path.read_bytes()
     (arguments.output / "selected_prefix_manifest.json").write_bytes(manifest_bytes)
     run_manifest = {
-        "schema_version": "r2_two_stage_pilot_run_v1",
+        "schema_version": protocol.run_schema_version,
         "created_at": _timestamp(),
         "protocol_git_revision": _git_revision(),
         "selected_prefix_manifest_sha256": manifest_hash,
         "source_schedule_sha256": source["schedule_sha256"],
         "source_trajectory_sha256": source["trajectory_sha256"],
-        "recovery_operator_version": RECOVERY_OPERATOR_VERSION,
+        "recovery_operator_version": protocol.operator_version,
         "stage_one_prompt_version": STAGE_ONE_PROMPT_VERSION,
-        "stage_two_prompt_version": STAGE_TWO_PROMPT_VERSION,
+        "stage_two_prompt_version": protocol.stage_two_prompt_version,
         "stage_one_instructions_sha256": _text_hash(STAGE_ONE_INSTRUCTIONS),
-        "stage_two_instructions_sha256": _text_hash(STAGE_TWO_INSTRUCTIONS),
+        "stage_two_instructions_sha256": _text_hash(protocol.stage_two_instructions),
         "stage_one_max_new_tokens": STAGE_ONE_MAX_NEW_TOKENS,
         "stage_two_max_new_tokens": STAGE_TWO_MAX_NEW_TOKENS,
         "model_inference": True,
@@ -128,7 +164,7 @@ def main() -> int:
     model_load_started = time.perf_counter()
     policy._load()
     model_load_seconds = time.perf_counter() - model_load_started
-    recovery = TwoStageRecoveryOperator(policy)
+    recovery = protocol.operator_class(policy)
     pairs: list[dict[str, Any]] = []
     pairs_path = arguments.output / "pairs.jsonl"
 
@@ -428,8 +464,36 @@ def _aggregate(pairs: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _protocol(pilot_config: dict[str, Any]) -> RecoveryProtocol:
+    operator_version = pilot_config.get("recovery", {}).get("operator_version")
+    if operator_version == V1_OPERATOR_VERSION:
+        return RecoveryProtocol(
+            run_schema_version="r2_two_stage_pilot_run_v1",
+            operator_version=V1_OPERATOR_VERSION,
+            stage_two_prompt_version=V1_STAGE_TWO_PROMPT_VERSION,
+            stage_two_instructions=V1_STAGE_TWO_INSTRUCTIONS,
+            operator_class=V1_OPERATOR,
+            forbidden_seeds=V1_FORBIDDEN_SEEDS,
+            output_contract="Action-ID: Axxx",
+        )
+    if operator_version == V2_OPERATOR_VERSION:
+        return RecoveryProtocol(
+            run_schema_version="r2_two_stage_pilot_run_v2",
+            operator_version=V2_OPERATOR_VERSION,
+            stage_two_prompt_version=V2_STAGE_TWO_PROMPT_VERSION,
+            stage_two_instructions=V2_STAGE_TWO_INSTRUCTIONS,
+            operator_class=V2_OPERATOR,
+            forbidden_seeds=V2_FORBIDDEN_SEEDS,
+            output_contract="Axxx",
+            parser_regex=r"^A\d{3}$",
+        )
+    raise RuntimeError(f"unsupported two-stage operator: {operator_version}")
+
+
 def _validate_frozen_configuration(
-    pilot_config: dict[str, Any], manifest: dict[str, Any]
+    pilot_config: dict[str, Any],
+    manifest: dict[str, Any],
+    protocol: RecoveryProtocol,
 ) -> None:
     baseline = pilot_config["baseline"]
     model = manifest["resolved_config"]["model"]
@@ -457,7 +521,7 @@ def _validate_frozen_configuration(
     if manifest["git_revision"] != pilot_config["source"]["baseline_git_revision"]:
         raise RuntimeError("formal run baseline revision does not match pilot config")
     expected_recovery = {
-        "operator_version": RECOVERY_OPERATOR_VERSION,
+        "operator_version": protocol.operator_version,
         "model_id": "Qwen/Qwen3-8B",
         "model_calls_per_intervention": 2,
         "environment_actions_per_intervention": 1,
@@ -470,15 +534,24 @@ def _validate_frozen_configuration(
             "maximum_subgoal_words": 12,
         },
         "stage_two": {
-            "prompt_version": STAGE_TWO_PROMPT_VERSION,
+            "prompt_version": protocol.stage_two_prompt_version,
             "max_new_tokens": STAGE_TWO_MAX_NEW_TOKENS,
-            "output_contract": "Action-ID: Axxx",
+            "output_contract": protocol.output_contract,
         },
         "retry_on_failure": False,
         "fallback_or_repair": False,
         "oracle_state": False,
         "memory": False,
     }
+    if protocol.parser_regex is not None:
+        expected_recovery["stage_two"]["parser_regex"] = protocol.parser_regex
+        expected_recovery.update(
+            {
+                "permissive_dual_format_parsing": False,
+                "constrained_decoding": False,
+                "candidate_logprob_ranking": False,
+            }
+        )
     if pilot_config["recovery"] != expected_recovery:
         raise RuntimeError("pilot config does not match the frozen R2 operator")
     if (
@@ -494,6 +567,7 @@ def _validate_prefixes(
     schedule: dict[str, Any],
     analysis: dict[str, Any],
     trajectories: tuple[dict[str, Any], ...],
+    protocol: RecoveryProtocol,
 ) -> None:
     scheduled = {int(item["seed"]): item for item in schedule["episodes"]}
     analyzed = {int(item["seed"]): item for item in analysis["episodes"]}
@@ -502,9 +576,9 @@ def _validate_prefixes(
     seeds = {int(item["seed"]) for item in prefixes}
     if len(prefixes) != 10 or len(seeds) != 10 or pilot_config["prefix_count"] != 10:
         raise RuntimeError("R2 pilot must contain exactly ten unique prefixes")
-    if seeds & FORBIDDEN_SEEDS:
+    if seeds & protocol.forbidden_seeds:
         raise RuntimeError("R2 manifest reuses a prior recovery-development seed")
-    if set(pilot_config["excluded_prior_recovery_seeds"]) != FORBIDDEN_SEEDS:
+    if set(pilot_config["excluded_prior_recovery_seeds"]) != protocol.forbidden_seeds:
         raise RuntimeError("prior recovery-development exclusions are incomplete")
     category_counts: Counter[str] = Counter()
     task_families = set()
