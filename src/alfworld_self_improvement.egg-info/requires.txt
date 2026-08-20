@@ -1,6 +1,0 @@
-
-[baseline]
-PyYAML>=6
-
-[dev]
-pytest>=8

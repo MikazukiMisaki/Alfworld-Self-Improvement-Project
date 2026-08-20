@@ -1,0 +1,39 @@
+{
+  "artifact_server_path": "artifacts/runtime/validation/sprint1-5-h4-formal-20260819T191000Z",
+  "failure_counts": {
+    "adjacent_repetition": 11,
+    "interface_failure": 0,
+    "navigation_exploration_failure": 12,
+    "off_target_manipulation": 22,
+    "state_progression_failure": 28,
+    "strict_abab_deadlock": 13,
+    "target_object_identification_failure": 23,
+    "wrong_transformation_tool_choice": 10
+  },
+  "frozen_implementation_commit": "08bc212d7b2ed1e38665f4b3049638ffe3a60005",
+  "metrics": {
+    "episodes_reaching_50_steps": 28,
+    "executed_inadmissible_actions": 0,
+    "malformed_ids": 0,
+    "mapping_failures": 0,
+    "mean_episode_length": 47.0,
+    "mean_generated_tokens_per_episode": 376.0,
+    "mean_input_tokens_per_step": 686.03,
+    "mean_reward": 0.0667,
+    "out_of_range_ids": 0,
+    "selection_failures": 0,
+    "success_count": 2,
+    "success_rate": 0.0667,
+    "token_cap_saturations": 0,
+    "total_episode_collection_seconds": 776.14,
+    "total_selections": 1410
+  },
+  "pipeline_version": "indexed_bounded_context_v1",
+  "schedule_sha256": "ee79fae0c62c618c4495c5c9ff45b8a95a463e7775ee82d55c922418a9273441",
+  "seeds": {
+    "end": 1029,
+    "start": 1000
+  },
+  "task_count": 30,
+  "timestamp": "2026-08-19T19:17:07.743648+00:00"
+}

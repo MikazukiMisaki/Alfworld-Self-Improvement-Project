@@ -111,6 +111,34 @@ class IndexedActionSelectionTests(unittest.TestCase):
         self.assertEqual(selection["selection_status"], "selected")
         self.assertIsNone(selection["failure_reason"])
 
+    def test_indexed_decision_records_input_tokens_without_changing_mapping(self) -> None:
+        policy = QwenPolicy(
+            QwenPolicyConfig(
+                model_id="test-model",
+                action_selection_mode="indexed_admissible",
+            )
+        )
+        request = ActionRequest(
+            task=Task("task", "look around", "valid_seen"),
+            observation="room",
+            history=(),
+            valid_actions=self.actions,
+        )
+
+        class Generated:
+            scores = ()
+
+        decision = policy._indexed_decision(
+            request,
+            policy._indexed_prompt(request),
+            "Action-ID: A000",
+            Generated(),
+            None,
+            input_tokens=321,
+        )
+        self.assertEqual(decision.token_statistics.input_tokens, 321)
+        self.assertEqual(decision.action, self.actions[0])
+
     def test_b0_parser_behavior_is_unchanged(self) -> None:
         parsed = parse_action(
             "Action: take pan 1 from stoveburner 3", self.actions

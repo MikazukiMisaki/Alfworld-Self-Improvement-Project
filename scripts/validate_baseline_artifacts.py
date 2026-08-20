@@ -123,6 +123,15 @@ def validate_baseline_artifacts(
         "free_form_validated": "free_form_v1",
         "indexed_admissible": "indexed_v1",
     }[action_selection_mode]
+    history_context = model_config.get("history_context", {})
+    if not isinstance(history_context, dict):
+        raise ArtifactValidationError("model history_context must be a mapping")
+    if history_context.get("mode", "full_raw") == "bounded_recent_state":
+        if action_selection_mode != "indexed_admissible":
+            raise ArtifactValidationError(
+                "bounded_recent_state requires indexed_admissible"
+            )
+        expected_pipeline = "indexed_bounded_context_v1"
     if top_level_mode != action_selection_mode:
         raise ArtifactValidationError(
             "top-level action selection mode does not match resolved config"

@@ -9,6 +9,7 @@ from evaluation.regression import (
     compare_trajectory_sets,
     compare_trajectories,
     parse_task_targets,
+    validate_indexed_context_config_equivalence,
     validate_interface_config_equivalence,
 )
 
@@ -43,6 +44,34 @@ class RegressionHarnessTests(unittest.TestCase):
                 indexed_model,
                 {"split": "valid_seen"},
             )
+
+    def test_indexed_context_configs_differ_only_by_pre_registered_context(self) -> None:
+        h0_collection = self._yaml("configs/collection/baseline_indexed.yaml")
+        hk_collection = self._yaml("configs/collection/baseline_indexed_h4.yaml")
+        environment = self._yaml(h0_collection["environment_config"])
+        validate_indexed_context_config_equivalence(
+            h0_collection,
+            hk_collection,
+            self._yaml(h0_collection["model_config"]),
+            self._yaml(hk_collection["model_config"]),
+            environment,
+            expected_window=4,
+        )
+
+    def test_indexed_context_comparison_records_both_pipeline_versions(self) -> None:
+        h0 = self._trajectory("task-a", 42, ["look"])
+        hk = self._trajectory("task-a", 42, ["inventory"])
+        report = compare_trajectory_sets(
+            [h0],
+            [hk],
+            reference_pipeline="indexed_v1",
+            candidate_pipeline="indexed_bounded_context_v1",
+        )
+        self.assertEqual(
+            report["comparison"],
+            "indexed_v1_vs_indexed_bounded_context_v1",
+        )
+        self.assertEqual(report["candidate_pipeline"], "indexed_bounded_context_v1")
 
     def test_task_or_seed_mismatch_is_rejected(self) -> None:
         free = self._trajectory("task-a", 42, ["look"])

@@ -6,7 +6,29 @@ Implement only what is necessary to answer the paper question: whether a selecto
 
 Do not implement DPO, memory retrieval, PPO/GRPO, additional environments, vector search, planners, or counterfactual credit assignment beyond the paired branch protocol.
 
+## Current status
+
+Sprint 1.5 / Phase 1 is complete. The frozen baseline is
+`indexed_bounded_context_v1` with bounded context `k=4`; see
+`reports/SPRINT_1_5_FINAL.md`.
+
+Sprint 2A deterministic reset and action-prefix replay passed. Sprint 2B joint
+recovery demonstrated one positive causal case, but diagnosis-to-action
+agreement remained 1/5 after the one allowed prompt revision. The current
+empirical issue is the reasoning-to-action gap, not formatting or action-ID
+grounding. The next architecture is two-stage bounded recovery; selector logic
+remains gated. Do not retune the frozen H4 baseline or joint operator.
+
+Seeds 1005, 1009, 1010, 1022, and 1027 are development-only and must remain
+outside held-out evaluation evidence.
+
+DPO, memory, PPO/GRPO, broad credit assignment, and learned selector work are
+deferred future research, not active implementation scope.
+
 ## Phase 1 — Baseline reproduction
+
+**Status: complete.** Sprint 1.5 froze and formally validated H4. The tracked
+summary and evidence references are in `reports/SPRINT_1_5_FINAL.md`.
 
 ### Goal
 
@@ -26,6 +48,10 @@ A reproducible baseline report with trajectories and resolved configurations. Pr
 
 ## Phase 2 — Trajectory collection and branch labels
 
+**Status: Sprint 2A replay validation passed; Sprint 2B joint pilot complete.**
+Exact paired branching is available. Joint recovery has non-zero opportunity,
+but insufficient semantic reliability for selector development.
+
 ### Goal
 
 Create a small, high-quality intervention-value dataset from paired continuations.
@@ -42,6 +68,10 @@ Create a small, high-quality intervention-value dataset from paired continuation
 A pilot corpus containing beneficial, neutral, and harmful recovery examples across multiple task families. Proceed only if one fixed recovery intervention beats or differs meaningfully from matched extra generation on at least a development subset.
 
 ## Phase 3 — Fixed reflection intervention
+
+**Status: joint operator evaluated; two-stage bounded recovery is next.** The
+joint operator's format is reliable, but its selected action usually does not
+implement its diagnosis.
 
 ### Goal
 
@@ -115,4 +145,3 @@ A paper-ready result package containing:
 - If recovery has no positive opportunity, pivot to measuring reflection quality/recoverability rather than training a selector.
 - If the selector does not beat random selection, report the negative result or simplify to an uncertainty-analysis paper.
 - If compute prevents multiple seeds or fixed task lists, reduce methods and tasks before weakening the evaluation protocol.
-

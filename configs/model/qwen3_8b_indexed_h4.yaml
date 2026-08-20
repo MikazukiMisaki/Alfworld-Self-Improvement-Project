@@ -1,0 +1,16 @@
+model_id: Qwen/Qwen3-8B
+device: auto
+dtype: bfloat16
+trust_remote_code: false
+enable_thinking: false
+pipeline_version: indexed_bounded_context_v1
+action_selection:
+  mode: indexed_admissible
+history_context:
+  mode: bounded_recent_state
+  window: 4
+generation:
+  max_new_tokens: 32
+  do_sample: false
+  temperature: null
+  top_p: null

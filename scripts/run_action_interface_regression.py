@@ -19,6 +19,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from evaluation.regression import (  # noqa: E402
     compare_trajectory_sets,
     render_comparison_markdown,
+    validate_indexed_context_config_equivalence,
     validate_interface_config_equivalence,
 )
 from trajectory.provenance import (  # noqa: E402
@@ -29,6 +30,7 @@ from trajectory.provenance import (  # noqa: E402
 
 FREE_CONFIG = PROJECT_ROOT / "configs/collection/baseline.yaml"
 INDEXED_CONFIG = PROJECT_ROOT / "configs/collection/baseline_indexed.yaml"
+INDEXED_H4_CONFIG = PROJECT_ROOT / "configs/collection/baseline_indexed_h4.yaml"
 
 
 def main() -> int:
@@ -36,6 +38,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("check-configs")
+    subparsers.add_parser("check-context-configs")
 
     compare = subparsers.add_parser("compare")
     compare.add_argument("free_form_run", type=Path)
@@ -50,10 +53,24 @@ def main() -> int:
         type=Path,
         default=PROJECT_ROOT / "artifacts/runtime/regression",
     )
+    context_run = subparsers.add_parser("run-context")
+    context_run.add_argument("--episodes", type=int, default=1)
+    context_run.add_argument("--run-name", required=True)
+    context_run.add_argument(
+        "--output-root",
+        type=Path,
+        default=PROJECT_ROOT / "artifacts/runtime/regression",
+    )
     arguments = parser.parse_args()
-    _validate_configs()
+    if arguments.command in {"check-context-configs", "run-context"}:
+        _validate_context_configs()
+    else:
+        _validate_configs()
     if arguments.command == "check-configs":
         print("ACTION_INTERFACE_CONFIGS_MATCH")
+        return 0
+    if arguments.command == "check-context-configs":
+        print("INDEXED_CONTEXT_CONFIGS_MATCH_K4")
         return 0
     if arguments.command == "compare":
         _compare(arguments.free_form_run, arguments.indexed_run, arguments.output)
@@ -64,9 +81,14 @@ def main() -> int:
     if pair_root.exists():
         raise SystemExit(f"output already exists: {pair_root}")
     pair_root.mkdir(parents=True)
-    free_run = _collect(FREE_CONFIG, arguments.episodes, pair_root, "free_form")
-    indexed_run = _collect(INDEXED_CONFIG, arguments.episodes, pair_root, "indexed")
-    _compare(free_run, indexed_run, pair_root / "comparison.json")
+    if arguments.command == "run-context":
+        h0_run = _collect(INDEXED_CONFIG, arguments.episodes, pair_root, "indexed_h0")
+        hk_run = _collect(INDEXED_H4_CONFIG, arguments.episodes, pair_root, "indexed_h4")
+        _compare_context(h0_run, hk_run, pair_root / "comparison.json")
+    else:
+        free_run = _collect(FREE_CONFIG, arguments.episodes, pair_root, "free_form")
+        indexed_run = _collect(INDEXED_CONFIG, arguments.episodes, pair_root, "indexed")
+        _compare(free_run, indexed_run, pair_root / "comparison.json")
     print(f"saved matched regression to {pair_root}")
     return 0
 
@@ -83,6 +105,22 @@ def _validate_configs() -> None:
         _read_yaml(_resolve(free_collection["model_config"])),
         _read_yaml(_resolve(indexed_collection["model_config"])),
         environment,
+    )
+
+
+def _validate_context_configs() -> None:
+    h0_collection = _read_yaml(INDEXED_CONFIG)
+    hk_collection = _read_yaml(INDEXED_H4_CONFIG)
+    environment = _read_yaml(_resolve(h0_collection["environment_config"]))
+    if environment != _read_yaml(_resolve(hk_collection["environment_config"])):
+        raise ValueError("H0/Hk environment configs differ")
+    validate_indexed_context_config_equivalence(
+        h0_collection,
+        hk_collection,
+        _read_yaml(_resolve(h0_collection["model_config"])),
+        _read_yaml(_resolve(hk_collection["model_config"])),
+        environment,
+        expected_window=4,
     )
 
 
@@ -124,6 +162,36 @@ def _compare(free_run: Path, indexed_run: Path, output: Path) -> None:
         free_trajectories,
         indexed_trajectories,
         reference_pipeline=reference_manifest["pipeline_version"],
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    output.with_suffix(".md").write_text(
+        render_comparison_markdown(report), encoding="utf-8"
+    )
+
+
+def _compare_context(h0_run: Path, hk_run: Path, output: Path) -> None:
+    _, h0_trajectories = load_run_trajectories(
+        h0_run,
+        requirement=ProvenanceRequirement.one(
+            pipeline_version="indexed_v1",
+            action_selection_mode="indexed_admissible",
+            split="valid_seen",
+        ),
+    )
+    _, hk_trajectories = load_run_trajectories(
+        hk_run,
+        requirement=ProvenanceRequirement.one(
+            pipeline_version="indexed_bounded_context_v1",
+            action_selection_mode="indexed_admissible",
+            split="valid_seen",
+        ),
+    )
+    report = compare_trajectory_sets(
+        h0_trajectories,
+        hk_trajectories,
+        reference_pipeline="indexed_v1",
+        candidate_pipeline="indexed_bounded_context_v1",
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

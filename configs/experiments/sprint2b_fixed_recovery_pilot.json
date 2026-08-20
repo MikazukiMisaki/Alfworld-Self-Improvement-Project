@@ -1,0 +1,73 @@
+{
+  "schema_version": "sprint2b_fixed_recovery_pilot_v1",
+  "frozen_before_execution": true,
+  "source": {
+    "baseline_git_revision": "08bc212d7b2ed1e38665f4b3049638ffe3a60005",
+    "formal_run": "artifacts/runtime/validation/sprint1-5-h4-formal-20260819T191000Z/h4",
+    "analysis": "artifacts/runtime/validation/sprint1-5-h4-formal-20260819T191000Z/analysis.json",
+    "analysis_sha256": "b357f3380015665de9c4e5dc4aed75113f9fc1ac5024bf2ea7f1562315c66fbe",
+    "schedule": "artifacts/runtime/validation/sprint1-5-h4-formal-20260819T191000Z/schedule.json",
+    "schedule_sha256": "ee79fae0c62c618c4495c5c9ff45b8a95a463e7775ee82d55c922418a9273441",
+    "trajectory_sha256": "48ddb86e33957549d34f8c449870c027f73100d64cdee642c04d98a625e7223b"
+  },
+  "baseline": {
+    "model_id": "Qwen/Qwen3-8B",
+    "pipeline_version": "indexed_bounded_context_v1",
+    "action_selection_mode": "indexed_admissible",
+    "history_context_mode": "bounded_recent_state",
+    "history_window": 4,
+    "enable_thinking": false,
+    "do_sample": false,
+    "max_new_tokens": 32,
+    "max_episode_steps": 50,
+    "split": "valid_seen"
+  },
+  "recovery": {
+    "operator_version": "fixed_one_shot_recovery_v1",
+    "prompt_version": "fixed-recovery-diagnosis-action-id-v1",
+    "model_id": "Qwen/Qwen3-8B",
+    "max_calls_per_recover_branch": 1,
+    "enable_thinking": false,
+    "do_sample": false,
+    "max_new_tokens": 32,
+    "retry_on_failure": false,
+    "fallback_or_repair": false
+  },
+  "prefixes": [
+    {
+      "schedule_index": 5,
+      "seed": 1005,
+      "task_id": "pick_heat_then_place_in_recep-Potato-None-Fridge-12/trial_T20190908_014451_271080",
+      "prefix_step": 2,
+      "replayed_action_count": 3
+    },
+    {
+      "schedule_index": 9,
+      "seed": 1009,
+      "task_id": "pick_cool_then_place_in_recep-Tomato-None-GarbageCan-6/trial_T20190909_082934_483899",
+      "prefix_step": 6,
+      "replayed_action_count": 7
+    },
+    {
+      "schedule_index": 10,
+      "seed": 1010,
+      "task_id": "look_at_obj_in_light-Bowl-None-DeskLamp-316/trial_T20190908_230702_962704",
+      "prefix_step": 1,
+      "replayed_action_count": 2
+    },
+    {
+      "schedule_index": 22,
+      "seed": 1022,
+      "task_id": "pick_heat_then_place_in_recep-Cup-None-Cabinet-22/trial_T20190907_173251_960848",
+      "prefix_step": 1,
+      "replayed_action_count": 2
+    },
+    {
+      "schedule_index": 27,
+      "seed": 1027,
+      "task_id": "pick_cool_then_place_in_recep-WineBottle-None-DiningTable-17/trial_T20190908_024426_412044",
+      "prefix_step": 3,
+      "replayed_action_count": 4
+    }
+  ]
+}
