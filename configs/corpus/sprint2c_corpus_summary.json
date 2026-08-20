@@ -1,0 +1,78 @@
+{
+  "schema_version": "sprint2c_corpus_summary_v1",
+  "gate": "C_RECOVERY_OPPORTUNITY_TOO_SPARSE_FOR_CURRENT_SELECTOR_STUDY",
+  "selector_implemented": false,
+  "selector_training_run": false,
+  "source_pool": {
+    "episodes": 200,
+    "successes": 21,
+    "success_rate": 0.105,
+    "selection_failure_episodes": 6,
+    "extension_executed": false,
+    "schedule_sha256": "1066ab7211afc0e4237023f0c5d1c28d31b558602ec90ad0dc49f06062b08863",
+    "trajectory_sha256": "2ea24e3ff988da75be6529f59cdbd890a9282f77d35baf2c0385eca85c58bcc4",
+    "run_manifest_sha256": "05c834bb76409f3b9d7f9804b965d131228c7980eb0655c1f28d7bd99158efc1"
+  },
+  "prefix_manifest": {
+    "prefix_count": 120,
+    "episode_group_count": 79,
+    "maximum_prefixes_per_episode": 2,
+    "sha256": "5b3ee62ee1e5cd038ab4f8cd7865378fb1318794511b9505c7c06b3301bf3f2d"
+  },
+  "protocol": {
+    "reconstruction_success_count": 120,
+    "stage_one_valid_count": 117,
+    "stage_one_incomplete_count": 3,
+    "stage_one_token_cap_reached_count": 4,
+    "stage_two_selected_count": 120,
+    "stage_two_malformed_count": 0,
+    "stage_two_out_of_range_count": 0,
+    "stage_two_incomplete_count": 0,
+    "mapping_failure_count": 0,
+    "recovery_action_not_executed_count": 3
+  },
+  "labels": {
+    "beneficial": 2,
+    "neutral": 115,
+    "harmful": 3,
+    "v_raw_histogram": {
+      "-1": 3,
+      "0": 115,
+      "+1": 2
+    },
+    "continue_fail_recover_success": 2,
+    "continue_success_recover_fail": 3,
+    "mean_v_raw": -0.008333333333333333
+  },
+  "cost": {
+    "mean_stage_one_input_tokens": 517.225,
+    "mean_stage_one_generated_tokens": 29.766666666666666,
+    "mean_stage_one_latency_seconds": 1.1289132971937457,
+    "mean_stage_two_input_tokens": 648.5833333333334,
+    "mean_stage_two_generated_tokens": 5.0,
+    "mean_stage_two_latency_seconds": 0.27680338112016517,
+    "mean_total_input_tokens": 1165.8083333333334,
+    "mean_total_generated_tokens": 34.766666666666666,
+    "mean_total_token_count": 1200.575,
+    "mean_sequential_latency_seconds": 1.405716678313911,
+    "total_generated_tokens": 4172,
+    "total_sequential_latency_seconds": 168.68600139766932
+  },
+  "runtime_artifacts": {
+    "pairs_jsonl_sha256": "785ffc5712b97fafc4ee9965e52eacef4bc390f7dfe4e8e227cc3cf38761f831",
+    "run_manifest_sha256": "43d84e78be357e1feeba3aa1055e7e59ebee4c71f23b7f8a798bded3fb4a4953",
+    "original_report_sha256": "cba79ec6664aefed166e66915d97091bfef03d6fac5449dcda5e8ae287f36153",
+    "corrected_analysis_sha256": "4f70a08bec154298d23db99fa0fcf302f088e100375f773de8e8d4b6e74fdf5c",
+    "qualitative_annotations_sha256": "ce30cf8a1a250fc2bb39bd6274975f5790f03de5c37bd49ced52df947af9296a"
+  },
+  "provenance": {
+    "frozen_r2_v2_protocol_commit": "1b84f922a39f58c3b6ed2ba31cb29d896486b0d0",
+    "r2_v2_development_result_commit": "89ecf910d3febcd2c4556f268cff0132b1070ad6",
+    "h4_schedule_commit": "8fd6c14b3a818e115dbae5e2bff71b00705adaf3",
+    "corpus_protocol_commit": "80f0237520cc9cbf94357a703d7670d553582c7d",
+    "prefix_manifest_commit": "761683aad6be88a44f11ea26549a27876a03ce82",
+    "exact_inference_commit": "2242534f86a40f7ff53010fd68eada1a5895a117",
+    "summary_correction_commit": "1ddb7bff5e95afb07d5af01b5f00b8ee5ee218c1"
+  },
+  "caveat": "The corpus is deliberately stratified; its beneficial fraction is not an estimate of the natural on-policy recovery rate."
+}
